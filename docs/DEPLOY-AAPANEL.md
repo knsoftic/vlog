@@ -91,14 +91,26 @@ Site banne ke baad **abhi root directory badalna hai** (step 6).
 
 ## 5. Code clone karein
 
+> **Zaroori:** aaPanel ka banaya hua folder `/www/wwwroot/pinecasttv.com` **delete na karein**. Us mein `.user.ini` (immutable) hoti hai; `rm -rf` se aaPanel site tootti hai aur `git clone` "directory not empty" error deta hai. Code ko **usi folder ke andar** clone karein:
+
 aaPanel → **Terminal** (ya SSH):
 
 ```bash
-cd /www/wwwroot
-rm -rf pinecasttv.com
-git clone https://github.com/knsoftic/vlog.git pinecasttv.com
-cd pinecasttv.com
+cd /www/wwwroot/pinecasttv.com
+rm -f index.html 404.html
+git init
+git remote add origin https://github.com/knsoftic/vlog.git
+git fetch origin
+git checkout -f -b main origin/main
 ```
+
+Check karein:
+
+```bash
+ls -la /www/wwwroot/pinecasttv.com
+```
+
+`artisan`, `app/`, `public/` waghera nazar aane chahiye aur `.user.ini` bhi wahin rahe.
 
 Dependencies install karein:
 
@@ -272,7 +284,7 @@ Ab `https://pinecasttv.com` kholein. Home page, `/sitemap.xml`, `/robots.txt`, `
 ```bash
 cd /www/wwwroot/pinecasttv.com
 php artisan down
-git pull
+git pull origin main
 composer install --no-dev --optimize-autoloader --no-interaction
 npm ci && npm run build
 php artisan migrate --force
