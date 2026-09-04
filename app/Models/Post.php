@@ -109,6 +109,30 @@ class Post extends Model
         return $q->where('status', 'published')->whereNotNull('published_at')->where('published_at', '<=', now());
     }
 
+    /** Content types that are switched on for the public site (Settings -> General). */
+    public static function enabledTypes(): array
+    {
+        $types = [];
+        if (setting_bool('content.vlogs_enabled', true)) {
+            $types[] = self::TYPE_VLOG;
+        }
+        if (setting_bool('content.articles_enabled', true)) {
+            $types[] = self::TYPE_ARTICLE;
+        }
+        return $types;
+    }
+
+    public static function typeEnabled(string $type): bool
+    {
+        return in_array($type, static::enabledTypes(), true);
+    }
+
+    /** Published AND of a type that is enabled on the public site. Use this on the frontend. */
+    public function scopeVisible(Builder $q): Builder
+    {
+        return $q->published()->whereIn('type', static::enabledTypes() ?: ['__none__']);
+    }
+
     public function scopeVlogs(Builder $q): Builder
     {
         return $q->where('type', self::TYPE_VLOG);

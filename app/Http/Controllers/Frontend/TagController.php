@@ -17,7 +17,7 @@ class TagController extends Controller
     {
         $tag = Tag::where('slug', $slug)->firstOrFail();
         $request->attributes->set('page_meta', ['page_type' => 'tag', 'post_id' => null, 'title' => '#'.$tag->name]);
-        $posts = $tag->posts()->published()->with(['category', 'author'])->orderByDesc('published_at')->paginate(max(6, (int) setting('site.posts_per_page', 12)));
+        $posts = $tag->posts()->visible()->with(['category', 'author'])->orderByDesc('published_at')->paginate(max(6, (int) setting('site.posts_per_page', 12)));
         $meta = $this->seo->meta([
             'title' => $this->seo->title('#'.$tag->name),
             'description' => $tag->description ?: 'Vlogs and articles tagged "'.$tag->name.'" on '.setting('site.name').'.',

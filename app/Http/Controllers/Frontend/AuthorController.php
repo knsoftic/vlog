@@ -18,13 +18,13 @@ class AuthorController extends Controller
     {
         $author = User::where('slug', $slug)->where('is_active', true)->firstOrFail();
         $request->attributes->set('page_meta', ['page_type' => 'author', 'post_id' => null, 'title' => $author->name]);
-        $posts = $author->posts()->published()->with(['category'])->orderByDesc('published_at')->paginate(max(6, (int) setting('site.posts_per_page', 12)));
+        $posts = $author->posts()->visible()->with(['category'])->orderByDesc('published_at')->paginate(max(6, (int) setting('site.posts_per_page', 12)));
         $stats = [
-            'posts' => $author->posts()->published()->count(),
-            'views' => (int) $author->posts()->published()->sum('views_count'),
-            'video_views' => (int) $author->posts()->published()->sum('video_plays_count'),
+            'posts' => $author->posts()->visible()->count(),
+            'views' => (int) $author->posts()->visible()->sum('views_count'),
+            'video_views' => (int) $author->posts()->visible()->sum('video_plays_count'),
         ];
-        $eng = ContentDaily::whereIn('post_id', $author->posts()->published()->select('id'))->selectRaw('SUM(engagement_time) e, SUM(views) v')->first();
+        $eng = ContentDaily::whereIn('post_id', $author->posts()->visible()->select('id'))->selectRaw('SUM(engagement_time) e, SUM(views) v')->first();
         $stats['avg_engagement'] = $eng && $eng->v > 0 ? (int) ($eng->e / $eng->v) : 0;
         $meta = $this->seo->meta([
             'title' => $this->seo->title($author->name),

@@ -26,19 +26,22 @@ class HomeController extends Controller
             $data = [];
             $used = [];
             foreach ($sections as $s) {
+                if (($s->key === 'latest' && ! Post::typeEnabled(Post::TYPE_VLOG)) || ($s->key === 'articles' && ! Post::typeEnabled(Post::TYPE_ARTICLE))) {
+                    continue;
+                }
                 $limit = (int) $s->setting('limit', 6);
                 $data[$s->key] = match ($s->key) {
-                    'hero' => $this->fresh(Post::published()->featured()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
-                    'latest' => $this->fresh(Post::published()->vlogs()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit + count($used)), $used, $limit),
-                    'trending' => $this->fresh(Post::published()->trending()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
-                    'popular' => $this->fresh(Post::published()->with(['category', 'author'])->orderByDesc('views_count')->limit($limit + count($used)), $used, $limit),
-                    'articles' => $this->fresh(Post::published()->articles()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
-                    'recommended' => $this->fresh(Post::published()->recommended()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
-                    'categories' => Category::active()->topLevel()->withCount(['posts' => fn ($q) => $q->published()])->orderByDesc('posts_count')->orderBy('sort_order')->limit($limit)->get(),
+                    'hero' => $this->fresh(Post::visible()->featured()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
+                    'latest' => $this->fresh(Post::visible()->vlogs()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit + count($used)), $used, $limit),
+                    'trending' => $this->fresh(Post::visible()->trending()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
+                    'popular' => $this->fresh(Post::visible()->with(['category', 'author'])->orderByDesc('views_count')->limit($limit + count($used)), $used, $limit),
+                    'articles' => $this->fresh(Post::visible()->articles()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
+                    'recommended' => $this->fresh(Post::visible()->recommended()->with(['category', 'author'])->orderByDesc('published_at')->limit($limit), $used),
+                    'categories' => Category::active()->topLevel()->withCount(['posts' => fn ($q) => $q->visible()])->orderByDesc('posts_count')->orderBy('sort_order')->limit($limit)->get(),
                     default => null,
                 };
                 if (! empty($s->setting('category_id')) && in_array($s->key, ['latest', 'popular'], true)) {
-                    $data[$s->key] = Post::published()->where('category_id', (int) $s->setting('category_id'))->with(['category', 'author'])->orderByDesc('published_at')->limit($limit)->get();
+                    $data[$s->key] = Post::visible()->where('category_id', (int) $s->setting('category_id'))->with(['category', 'author'])->orderByDesc('published_at')->limit($limit)->get();
                 }
             }
             return [$sections, $data];
@@ -47,7 +50,7 @@ class HomeController extends Controller
 
         // Fallback: if there are no featured posts, use the latest vlogs for the hero
         if (isset($data['hero']) && $data['hero']->isEmpty()) {
-            $data['hero'] = Post::published()->with(['category', 'author'])->orderByDesc('published_at')->limit(5)->get();
+            $data['hero'] = Post::visible()->with(['category', 'author'])->orderByDesc('published_at')->limit(5)->get();
         }
 
         $meta = $this->seo->meta([

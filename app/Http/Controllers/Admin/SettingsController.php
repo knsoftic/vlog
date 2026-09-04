@@ -29,6 +29,8 @@ class SettingsController extends Controller
                 'site.timezone' => ['Timezone', 'text', 'e.g. UTC, Asia/Karachi'],
                 'site.posts_per_page' => ['Posts per page', 'number'],
                 'site.footer_text' => ['Footer text', 'text'],
+                'content.vlogs_enabled' => ['Show Vlogs on the site', 'bool', 'Off = Vlogs menu link, /vlogs listing, vlog pages, home sections, search and sitemap entries are all hidden. Content stays in the admin panel.'],
+                'content.articles_enabled' => ['Show Articles on the site', 'bool', 'Same as above, for articles.'],
                 'site.social_links' => ['Social links (JSON)', 'textarea', '{"youtube":"","facebook":"","instagram":"","twitter":"","tiktok":""}'],
             ]],
             'branding' => ['title' => 'Branding', 'fields' => [
@@ -166,6 +168,7 @@ class SettingsController extends Controller
         }
         Cache::forget('site.nav');
         Cache::forget('home.sections');
+        Cache::forget('sitemap.xml');
         $this->audit->log('settings_changed', 'settings', null, ucfirst($tab).' settings updated', $before, $after);
         return back()->with('success', 'Settings saved.');
     }

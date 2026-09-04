@@ -29,6 +29,8 @@ class SettingsService
             'site.timezone' => 'UTC',
             'site.posts_per_page' => 12,
             'site.footer_text' => '',
+            'content.vlogs_enabled' => '1',
+            'content.articles_enabled' => '1',
             'site.organization_name' => '',
             'site.organization_logo' => '',
             'site.social_links' => json_encode(['youtube' => '', 'facebook' => '', 'instagram' => '', 'twitter' => '', 'tiktok' => '']),

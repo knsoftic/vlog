@@ -79,10 +79,18 @@ class AppServiceProvider extends ServiceProvider
                 return ['categories' => collect(), 'headerMenu' => collect(), 'footerMenu' => collect(), 'footerPages' => collect(), 'adSlots' => collect()];
             }
             return Cache::remember('site.nav', 600, function () {
+                $hidden = [];
+                if (! setting_bool('content.vlogs_enabled', true)) {
+                    $hidden[] = '/vlogs';
+                }
+                if (! setting_bool('content.articles_enabled', true)) {
+                    $hidden[] = '/articles';
+                }
+                $menuFilter = fn ($items) => $items->reject(fn ($i) => in_array(rtrim((string) (parse_url($i->url, PHP_URL_PATH) ?: '/'), '/') ?: '/', $hidden, true))->values();
                 return [
                     'categories' => Category::active()->topLevel()->orderBy('sort_order')->orderBy('name')->with('children')->get(),
-                    'headerMenu' => MenuItem::where('location', 'header')->where('is_active', true)->orderBy('sort_order')->get(),
-                    'footerMenu' => MenuItem::where('location', 'footer')->where('is_active', true)->orderBy('sort_order')->get(),
+                    'headerMenu' => $menuFilter(MenuItem::where('location', 'header')->where('is_active', true)->orderBy('sort_order')->get()),
+                    'footerMenu' => $menuFilter(MenuItem::where('location', 'footer')->where('is_active', true)->orderBy('sort_order')->get()),
                     'footerPages' => Page::published()->where('show_in_footer', true)->orderBy('sort_order')->get(['title', 'slug']),
                     'adSlots' => AdSlot::where('enabled', true)->get()->keyBy('key'),
                 ];

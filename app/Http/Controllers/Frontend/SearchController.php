@@ -20,7 +20,7 @@ class SearchController extends Controller
         $request->attributes->set('page_meta', ['page_type' => 'search', 'post_id' => null, 'title' => 'Search']);
         $posts = null;
         if ($q !== '') {
-            $posts = Post::published()->search($q)->with(['category', 'author'])->orderByDesc('views_count')->orderByDesc('published_at')->paginate(12)->withQueryString();
+            $posts = Post::visible()->search($q)->with(['category', 'author'])->orderByDesc('views_count')->orderByDesc('published_at')->paginate(12)->withQueryString();
             if (! $request->query('page') && setting_bool('analytics.internal_enabled', true)) {
                 $this->analytics->logSearch($request, $q, $posts->total());
             }

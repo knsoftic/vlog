@@ -153,8 +153,8 @@
             <div>
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Explore</h3>
                 <ul class="mt-3 space-y-2 text-sm">
-                    <li><a href="{{ route('vlogs') }}" class="text-slate-600 hover:text-slate-900">Latest Vlogs</a></li>
-                    <li><a href="{{ route('articles') }}" class="text-slate-600 hover:text-slate-900">Articles</a></li>
+                    @if(setting_bool('content.vlogs_enabled', true))<li><a href="{{ route('vlogs') }}" class="text-slate-600 hover:text-slate-900">Latest Vlogs</a></li>@endif
+                    @if(setting_bool('content.articles_enabled', true))<li><a href="{{ route('articles') }}" class="text-slate-600 hover:text-slate-900">Articles</a></li>@endif
                     <li><a href="{{ route('trending') }}" class="text-slate-600 hover:text-slate-900">Trending</a></li>
                     <li><a href="{{ route('categories') }}" class="text-slate-600 hover:text-slate-900">Categories</a></li>
                     @foreach($siteNav['footerMenu'] as $item)<li><a href="{{ $item->url }}" class="text-slate-600 hover:text-slate-900">{{ $item->label }}</a></li>@endforeach

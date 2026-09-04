@@ -218,10 +218,17 @@ class SeoService
             $urls[] = compact('loc', 'lastmod', 'freq', 'priority', 'extra');
         };
         $add(url('/'), now()->toAtomString(), 'daily', '1.0');
-        foreach ([route('vlogs'), route('articles'), route('trending'), route('popular'), route('categories')] as $u) {
+        $static = [route('trending'), route('popular'), route('categories')];
+        if (Post::typeEnabled(Post::TYPE_VLOG)) {
+            $static[] = route('vlogs');
+        }
+        if (Post::typeEnabled(Post::TYPE_ARTICLE)) {
+            $static[] = route('articles');
+        }
+        foreach ($static as $u) {
             $add($u, null, 'daily', '0.8');
         }
-        Post::published()->with('videoMedia')->orderByDesc('published_at')->chunk(500, function ($posts) use ($add) {
+        Post::visible()->with('videoMedia')->orderByDesc('published_at')->chunk(500, function ($posts) use ($add) {
             foreach ($posts as $p) {
                 if ($p->isThin() || str_contains((string) $p->robots, 'noindex')) {
                     continue;

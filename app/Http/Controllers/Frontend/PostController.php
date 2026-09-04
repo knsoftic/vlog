@@ -15,16 +15,18 @@ class PostController extends Controller
 
     public function vlogs(Request $request)
     {
+        abort_unless(Post::typeEnabled(Post::TYPE_VLOG), 404);
         $request->attributes->set('page_meta', ['page_type' => 'listing', 'post_id' => null, 'title' => 'Latest Vlogs']);
-        $posts = Post::published()->vlogs()->with(['category', 'author'])->orderByDesc('published_at')->paginate($this->perPage());
+        $posts = Post::visible()->vlogs()->with(['category', 'author'])->orderByDesc('published_at')->paginate($this->perPage());
         $meta = $this->seo->meta(['title' => $this->seo->title('Latest Vlogs'), 'description' => 'Watch the newest vlogs on '.setting('site.name').'.', 'canonical' => route('vlogs')]);
         return view('frontend.listing', ['posts' => $posts, 'meta' => $meta, 'heading' => 'Latest Vlogs', 'subheading' => 'Fresh from the camera', 'kind' => 'vlogs']);
     }
 
     public function articles(Request $request)
     {
+        abort_unless(Post::typeEnabled(Post::TYPE_ARTICLE), 404);
         $request->attributes->set('page_meta', ['page_type' => 'listing', 'post_id' => null, 'title' => 'Articles']);
-        $posts = Post::published()->articles()->with(['category', 'author'])->orderByDesc('published_at')->paginate($this->perPage());
+        $posts = Post::visible()->articles()->with(['category', 'author'])->orderByDesc('published_at')->paginate($this->perPage());
         $meta = $this->seo->meta(['title' => $this->seo->title('Articles'), 'description' => 'Long-form articles and guides on '.setting('site.name').'.', 'canonical' => route('articles')]);
         return view('frontend.listing', ['posts' => $posts, 'meta' => $meta, 'heading' => 'Articles', 'subheading' => 'Long-form reads and guides', 'kind' => 'articles']);
     }
@@ -32,7 +34,7 @@ class PostController extends Controller
     public function trending(Request $request)
     {
         $request->attributes->set('page_meta', ['page_type' => 'listing', 'post_id' => null, 'title' => 'Trending']);
-        $posts = Post::published()->with(['category', 'author'])
+        $posts = Post::visible()->with(['category', 'author'])
             ->orderByDesc('is_trending')
             ->orderByRaw('(SELECT COALESCE(SUM(views),0) FROM content_daily WHERE content_daily.post_id = posts.id AND content_daily.date >= ?) DESC', [now()->subDays(7)->toDateString()])
             ->orderByDesc('published_at')->paginate($this->perPage());
@@ -43,7 +45,7 @@ class PostController extends Controller
     public function popular(Request $request)
     {
         $request->attributes->set('page_meta', ['page_type' => 'listing', 'post_id' => null, 'title' => 'Popular']);
-        $posts = Post::published()->with(['category', 'author'])->orderByDesc('views_count')->orderByDesc('published_at')->paginate($this->perPage());
+        $posts = Post::visible()->with(['category', 'author'])->orderByDesc('views_count')->orderByDesc('published_at')->paginate($this->perPage());
         $meta = $this->seo->meta(['title' => $this->seo->title('Most Popular'), 'description' => 'All-time most popular vlogs and articles on '.setting('site.name').'.', 'canonical' => route('popular')]);
         return view('frontend.listing', ['posts' => $posts, 'meta' => $meta, 'heading' => 'Most Popular', 'subheading' => 'All-time favourites', 'kind' => 'popular']);
     }
@@ -61,7 +63,7 @@ class PostController extends Controller
     protected function show(Request $request, string $slug, string $type)
     {
         $post = Post::with(['category', 'subcategory', 'author', 'tags', 'videoMedia'])->where('slug', $slug)->first();
-        if (! $post) {
+        if (! $post || ! Post::typeEnabled($post->type)) {
             abort(404);
         }
         // Wrong type in URL → canonical redirect (keeps a single URL per post)
@@ -76,11 +78,11 @@ class PostController extends Controller
         }
         $request->attributes->set('page_meta', ['page_type' => $post->type, 'post_id' => $post->id, 'title' => $post->title]);
 
-        $related = Post::published()->where('id', '!=', $post->id)
+        $related = Post::visible()->where('id', '!=', $post->id)
             ->where(fn ($q) => $q->where('category_id', $post->category_id)->orWhereHas('tags', fn ($t) => $t->whereIn('tags.id', $post->tags->pluck('id'))))
             ->with(['category', 'author'])->orderByDesc('published_at')->limit(6)->get();
         if ($related->count() < 3) {
-            $related = $related->merge(Post::published()->where('id', '!=', $post->id)->whereNotIn('id', $related->pluck('id'))->with(['category', 'author'])->orderByDesc('views_count')->limit(6 - $related->count())->get());
+            $related = $related->merge(Post::visible()->where('id', '!=', $post->id)->whereNotIn('id', $related->pluck('id'))->with(['category', 'author'])->orderByDesc('views_count')->limit(6 - $related->count())->get());
         }
         $comments = $post->allow_comments ? $post->approvedComments()->with('replies')->limit(50)->get() : collect();
         $meta = $this->seo->forPost($post);

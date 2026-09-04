@@ -667,7 +667,7 @@ class AnalyticsService
             return [];
         }
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
-        $posts = Post::published()->where('title', 'like', $like)->orderByDesc('views_count')->limit($limit)->get(['id', 'title', 'slug', 'type', 'thumbnail', 'featured_image', 'video_type', 'video_url']);
+        $posts = Post::visible()->where('title', 'like', $like)->orderByDesc('views_count')->limit($limit)->get(['id', 'title', 'slug', 'type', 'thumbnail', 'featured_image', 'video_type', 'video_url']);
         return $posts->map(fn ($p) => ['title' => $p->title, 'url' => $p->url, 'type' => $p->type, 'image' => $p->thumbnail_url])->all();
     }
 }
