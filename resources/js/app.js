@@ -1,5 +1,5 @@
 /**
- * VlogHub frontend runtime
+ * PineCast TV frontend runtime
  *  - Cookie consent + Google Consent Mode v2
  *  - First-party engagement tracking (heartbeat, scroll depth, video milestones, share, outbound)
  *  - GA4 event bridge (only when GA4 is enabled AND consent granted)

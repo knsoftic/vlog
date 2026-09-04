@@ -1,6 +1,6 @@
-# VlogHub — aaPanel par Deploy karne ki Step-by-Step Guide
+# PineCast TV — aaPanel par Deploy karne ki Step-by-Step Guide
 
-Yeh guide aaPanel (Linux server, Nginx + PHP 8.2 + MySQL) par VlogHub ko production mein chalane ke liye hai.
+Yeh guide aaPanel (Linux server, Nginx + PHP 8.2 + MySQL) par PineCast TV ko production mein chalane ke liye hai.
 Har step ko order mein follow karein.
 
 ---
@@ -14,7 +14,7 @@ Har step ko order mein follow karein.
 | PHP | 8.2 (extensions: `fileinfo`, `gd`, `mbstring`, `openssl`, `pdo_mysql`, `zip`, `curl`, `exif`, `intl` optional) |
 | Database | MySQL 8.0 ya MariaDB 10.6+ |
 | Web server | Nginx |
-| Domain | e.g. `example.com` (DNS A record server IP par point kare) |
+| Domain | e.g. `pinecasttv.com` (DNS A record server IP par point kare) |
 | Repo | `https://github.com/knsoftic/vlog.git` |
 
 ---
@@ -80,8 +80,8 @@ aaPanel → **Database** → **Add database**:
 
 aaPanel → **Website** → **Add site**:
 
-- Domain: `example.com` aur `www.example.com`
-- Root directory: `/www/wwwroot/example.com`
+- Domain: `pinecasttv.com` aur `www.pinecasttv.com`
+- Root directory: `/www/wwwroot/pinecasttv.com`
 - PHP version: **PHP-82**
 - Database: **No** (step 3 mein ban chuka hai)
 
@@ -95,9 +95,9 @@ aaPanel → **Terminal** (ya SSH):
 
 ```bash
 cd /www/wwwroot
-rm -rf example.com
-git clone https://github.com/knsoftic/vlog.git example.com
-cd example.com
+rm -rf pinecasttv.com
+git clone https://github.com/knsoftic/vlog.git pinecasttv.com
+cd pinecasttv.com
 ```
 
 Dependencies install karein:
@@ -122,10 +122,10 @@ nano .env
 Yeh values set karein:
 
 ```env
-APP_NAME="Your Site Name"
+APP_NAME="PineCast TV"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://example.com
+APP_URL=https://pinecasttv.com
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -140,7 +140,7 @@ QUEUE_CONNECTION=database
 
 # Pehle admin ke liye (seed se pehle set karein)
 ADMIN_NAME="Site Owner"
-ADMIN_EMAIL=you@example.com
+ADMIN_EMAIL=you@pinecasttv.com
 ADMIN_PASSWORD=ChooseAStrongPassword123
 
 # Google OAuth (AdSense + Search Console) — admin panel se bhi dal sakte hain
@@ -165,7 +165,7 @@ php artisan storage:link
 Permissions:
 
 ```bash
-chown -R www:www /www/wwwroot/example.com
+chown -R www:www /www/wwwroot/pinecasttv.com
 chmod -R 775 storage bootstrap/cache
 ```
 
@@ -173,12 +173,12 @@ chmod -R 775 storage bootstrap/cache
 
 ## 7. Nginx: root ko `public` par set karein
 
-aaPanel → **Website** → example.com → **Site directory**:
+aaPanel → **Website** → pinecasttv.com → **Site directory**:
 
 - **Running directory**: `/public` select karein → Save
 - **Anti-XSS attack** ko off rakhein (open_basedir se Laravel ko masla hota hai) ya `open_basedir` mein project path add karein.
 
-Phir **Website → example.com → Config** (Nginx config) mein `location /` block ko yeh banayein (agar pehle se `try_files` nahi hai):
+Phir **Website → pinecasttv.com → Config** (Nginx config) mein `location /` block ko yeh banayein (agar pehle se `try_files` nahi hai):
 
 ```nginx
 location / {
@@ -198,10 +198,10 @@ Save karein aur Nginx reload karein (aaPanel automatically reload karta hai).
 
 ## 8. SSL (HTTPS) lagayein
 
-aaPanel → **Website** → example.com → **SSL** → **Let's Encrypt** → domain select → **Apply**.
+aaPanel → **Website** → pinecasttv.com → **SSL** → **Let's Encrypt** → domain select → **Apply**.
 Phir **Force HTTPS** on karein.
 
-`.env` mein `APP_URL=https://example.com` hona chahiye (Google OAuth redirect URI HTTPS par hi kaam karta hai).
+`.env` mein `APP_URL=https://pinecasttv.com` hona chahiye (Google OAuth redirect URI HTTPS par hi kaam karta hai).
 
 ---
 
@@ -210,12 +210,12 @@ Phir **Force HTTPS** on karein.
 aaPanel → **Cron** → **Add task**:
 
 - Type: **Shell script**
-- Name: `vloghub-scheduler`
+- Name: `pinecasttv-scheduler`
 - Execution cycle: **N minutes → 1**
 - Script:
 
 ```bash
-cd /www/wwwroot/example.com && /www/server/php/82/bin/php artisan schedule:run >> /dev/null 2>&1
+cd /www/wwwroot/pinecasttv.com && /www/server/php/82/bin/php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Yeh scheduler har minute chalta hai aur yeh jobs run karta hai:
@@ -234,31 +234,31 @@ Yeh scheduler har minute chalta hai aur yeh jobs run karta hai:
 ## 10. Cache warm karein (deploy ke baad har baar)
 
 ```bash
-cd /www/wwwroot/example.com
+cd /www/wwwroot/pinecasttv.com
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 ```
 
-Ab `https://example.com` kholein. Home page, `/sitemap.xml`, `/robots.txt`, `/ads.txt` check karein.
+Ab `https://pinecasttv.com` kholein. Home page, `/sitemap.xml`, `/robots.txt`, `/ads.txt` check karein.
 
 ---
 
 ## 11. Admin panel setup
 
-1. `https://example.com/admin/login` par jayein aur `.env` wale `ADMIN_EMAIL` / `ADMIN_PASSWORD` se login karein.
+1. `https://pinecasttv.com/admin/login` par jayein aur `.env` wale `ADMIN_EMAIL` / `ADMIN_PASSWORD` se login karein.
 2. **Profile** → password change karein.
 3. **Settings → General/Branding**: site name, logo, favicon, colours.
 4. **Settings → Cookie Consent**: EEA/UK traffic ke liye certified CMP script (agar hai).
 5. **Settings → Google Integrations**:
    - Google Cloud Console → **APIs & Services → Credentials → Create OAuth client ID → Web application**
-   - Authorized redirect URI: `https://example.com/admin/google/callback`
+   - Authorized redirect URI: `https://pinecasttv.com/admin/google/callback`
    - **AdSense Management API** aur **Google Search Console API** enable karein
    - Client ID + Secret yahan paste karein → Save
 6. **Monetization → Settings**: Publisher ID (`pub-…`) dalein, AdSense enable karein → **Connect with Google**.
 7. **Monetization → Ad Units**: AdSense se har unit ka `data-ad-slot` id dalein aur enable karein.
-8. **Monetization → Ads.txt**: validate karke save karein → `https://example.com/ads.txt` par check karein.
+8. **Monetization → Ads.txt**: validate karke save karein → `https://pinecasttv.com/ads.txt` par check karein.
 9. **SEO → Search Console → Connect with Google** → property select → Sync.
 10. **Settings → Analytics**: GA4 Measurement ID (optional).
 11. **Pages**: Privacy Policy, Cookie Policy, Terms, Disclaimer, About, Contact apne site ke mutabiq edit karein.
@@ -270,7 +270,7 @@ Ab `https://example.com` kholein. Home page, `/sitemap.xml`, `/robots.txt`, `/ad
 ## 12. Update / redeploy (naya code aane par)
 
 ```bash
-cd /www/wwwroot/example.com
+cd /www/wwwroot/pinecasttv.com
 php artisan down
 git pull
 composer install --no-dev --optimize-autoloader --no-interaction
@@ -298,11 +298,11 @@ Migrations backward-safe hain; existing data delete nahi hota.
 | Masla | Hal |
 |---|---|
 | 500 error, blank page | `storage/logs/laravel.log` dekhein; `chmod -R 775 storage bootstrap/cache`; `php artisan optimize:clear` |
-| "open_basedir restriction" | aaPanel → Website → Site directory → Anti-XSS off, ya `open_basedir` mein `/www/wwwroot/example.com/:/tmp/` |
+| "open_basedir restriction" | aaPanel → Website → Site directory → Anti-XSS off, ya `open_basedir` mein `/www/wwwroot/pinecasttv.com/:/tmp/` |
 | Images 404 (`/storage/...`) | `php artisan storage:link`; aaPanel mein symlink allow ho (Anti-XSS off) |
 | CSS/JS load nahi ho raha | `npm run build` chalayein; `public/hot` file delete karein |
 | Scheduled post publish nahi hua | Cron job check karein (Admin → Logs → System Health "scheduler running") |
-| Google connect error `redirect_uri_mismatch` | Cloud Console mein exact URI `https://example.com/admin/google/callback` add karein |
+| Google connect error `redirect_uri_mismatch` | Cloud Console mein exact URI `https://pinecasttv.com/admin/google/callback` add karein |
 | AdSense "Data unavailable" | Connect + Sync karein; naye account mein data 24–48h baad aata hai |
 | Upload fail (large video) | PHP `upload_max_filesize`/`post_max_size` aur Nginx `client_max_body_size 512m;` badhayein |
 | Country "unknown" | Cloudflare proxy on karein (CF-IPCountry header) ya GeoLite2 `.mmdb` ka path `GEOIP_DATABASE` mein dein |

@@ -20,7 +20,7 @@ class SettingsService
     {
         return [
             // General
-            'site.name' => config('app.name', 'VlogHub'),
+            'site.name' => config('app.name', 'PineCast TV'),
             'site.tagline' => 'Stories worth watching',
             'site.description' => 'A modern vlogging and content publishing platform.',
             'site.logo' => '',

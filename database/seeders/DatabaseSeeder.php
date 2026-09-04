@@ -108,7 +108,7 @@ class DatabaseSeeder extends Seeder
 
     protected function pages(): void
     {
-        $site = setting('site.name', 'VlogHub');
+        $site = setting('site.name', 'PineCast TV');
         $pages = [
             ['about-us', 'About Us', 'default', "<h2>Who we are</h2><p>{$site} is an independent vlogging and publishing platform. We create original video stories, guides and articles about the things we love.</p><h2>Our mission</h2><p>To publish honest, useful and entertaining content — and to keep improving it with feedback from our community.</p><h2>Contact</h2><p>Have a question or a collaboration idea? Visit our <a href=\"/page/contact-us\">contact page</a>.</p>"],
             ['contact-us', 'Contact Us', 'contact', '<p>We would love to hear from you. Fill in the form below and we will get back to you as soon as possible.</p>'],
@@ -192,7 +192,7 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $made[$cat]->id, 'subcategory_id' => $sub ? Category::where('name', $sub)->value('id') : null,
                 'author_id' => $author->id, 'created_by' => $author->id, 'status' => 'published', 'published_at' => now()->subDays(count($samples) - $k)->subHours($k),
                 'is_featured' => $featured, 'is_trending' => $trending, 'is_recommended' => $k % 3 === 0, 'allow_comments' => true,
-                'meta_description' => 'Watch '.$title.' — an original '.$type.' from '.setting('site.name', 'VlogHub').' with practical tips and behind-the-scenes moments.',
+                'meta_description' => 'Watch '.$title.' — an original '.$type.' from '.setting('site.name', 'PineCast TV').' with practical tips and behind-the-scenes moments.',
                 'focus_keyword' => strtolower($cat), 'featured_image_alt' => $title,
             ]);
             $post->tags()->sync(Tag::findOrCreateByNames($tags));

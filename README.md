@@ -1,4 +1,4 @@
-# VlogHub — Vlogging CMS, Analytics & Monetization Platform
+# PineCast TV — Vlogging CMS, Analytics & Monetization Platform
 
 A Laravel 12 + MySQL vlogging / content-publishing platform with a complete admin panel:
 content (vlogs, articles, categories, tags, authors, media), first-party analytics, Google Analytics 4,
@@ -24,7 +24,7 @@ npm install && npm run build
 php artisan serve             # http://127.0.0.1:8000
 ```
 
-Default admin (change immediately): `admin@example.com` / `ChangeMe12345!`
+Default admin (change immediately): `admin@pinecasttv.com` / `ChangeMe12345!`
 (override with `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` in `.env` before seeding).
 
 Admin panel: `/admin`
