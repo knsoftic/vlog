@@ -55,11 +55,38 @@ composer --version
 node -v && npm -v
 ```
 
+### Zaroori: sahi PHP CLI use karein
+
+Ubuntu ka apna `php` (`/usr/bin/php`) aaPanel wale PHP se alag hota hai aur us mein `pdo_mysql` / `mbstring` nahi hote.
+Isi wajah se `php artisan migrate` par **"could not find driver"** aur `view:cache` par **"undefined function mb_split()"** aata hai.
+
+Ek baar yeh chalayein taake `php` hamesha aaPanel ka PHP 8.2 use kare:
+
+```bash
+ln -sf /www/server/php/82/bin/php /usr/local/bin/php
+hash -r
+php -v
+```
+
+Extensions verify karein (sab present hone chahiye):
+
+```bash
+php -m | grep -E "pdo_mysql|mbstring|fileinfo|gd|zip|curl|exif"
+```
+
+Koi missing ho to: aaPanel → App Store → PHP 8.2 → **Settings → Install extensions**.
+
 Agar `composer` nahi mila:
 
 ```bash
 curl -sS https://getcomposer.org/installer | /www/server/php/82/bin/php
 sudo mv composer.phar /usr/local/bin/composer
+```
+
+Root user ke tor par composer chalate waqt `COMPOSER_ALLOW_SUPERUSER=1` prefix lagayein:
+
+```bash
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 ```
 
 ---
@@ -116,7 +143,7 @@ ls -la /www/wwwroot/pinecasttv.com
 Dependencies install karein:
 
 ```bash
-composer install --no-dev --optimize-autoloader --no-interaction
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 npm ci
 npm run build
 ```
@@ -318,6 +345,11 @@ Migrations backward-safe hain; existing data delete nahi hota.
 | Google connect error `redirect_uri_mismatch` | Cloud Console mein exact URI `https://pinecasttv.com/admin/google/callback` add karein |
 | AdSense "Data unavailable" | Connect + Sync karein; naye account mein data 24–48h baad aata hai |
 | Upload fail (large video) | PHP `upload_max_filesize`/`post_max_size` aur Nginx `client_max_body_size 512m;` badhayein |
+| `could not find driver` (migrate) | System PHP use ho raha hai. `ln -sf /www/server/php/82/bin/php /usr/local/bin/php && hash -r`, phir `php -m \| grep pdo_mysql` |
+| `Call to undefined function mb_split()` | Wahi wajah — `mbstring` wale PHP 8.2 se chalayein; `rm -f bootstrap/cache/config.php bootstrap/cache/routes-v7.php` karke dobara cache karein |
+| `Do not run Composer as root` | `COMPOSER_ALLOW_SUPERUSER=1 composer install ...` |
+| `dubious ownership in repository` | `git config --global --add safe.directory /www/wwwroot/pinecasttv.com` |
+| Commands `/root` mein chal rahi hain | Har command se pehle `cd /www/wwwroot/pinecasttv.com` |
 | Country "unknown" | Cloudflare proxy on karein (CF-IPCountry header) ya GeoLite2 `.mmdb` ka path `GEOIP_DATABASE` mein dein |
 
 ---
