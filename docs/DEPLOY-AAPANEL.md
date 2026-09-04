@@ -98,6 +98,7 @@ aaPanel → **Terminal** (ya SSH):
 ```bash
 cd /www/wwwroot/pinecasttv.com
 rm -f index.html 404.html
+git config --global --add safe.directory /www/wwwroot/pinecasttv.com
 git init
 git remote add origin https://github.com/knsoftic/vlog.git
 git fetch origin
