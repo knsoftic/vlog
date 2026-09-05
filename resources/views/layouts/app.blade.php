@@ -31,15 +31,25 @@
     <title>{{ $meta['title'] }}</title>
     <meta name="description" content="{{ $meta['description'] }}">
     <meta name="robots" content="{{ $meta['robots'] }}">
+    @if(!empty($meta['keywords']))<meta name="keywords" content="{{ $meta['keywords'] }}">@endif
+    @if(!empty($meta['author']))<meta name="author" content="{{ $meta['author'] }}">@endif
+    <meta name="publisher" content="{{ $meta['publisher'] }}">
+    <meta name="copyright" content="&copy; {{ date('Y') }} {{ $meta['publisher'] }}">
     <link rel="canonical" href="{{ $meta['canonical'] }}">
     <meta property="og:type" content="{{ $meta['og_type'] }}">
     <meta property="og:site_name" content="{{ setting('site.name') }}">
+    <meta property="og:locale" content="{{ $meta['locale'] }}">
     <meta property="og:title" content="{{ $meta['og_title'] }}">
     <meta property="og:description" content="{{ $meta['og_description'] }}">
     <meta property="og:url" content="{{ $meta['canonical'] }}">
     @if(!empty($meta['og_image']))<meta property="og:image" content="{{ $meta['og_image'] }}">@endif
     @if(!empty($meta['published_time']))<meta property="article:published_time" content="{{ $meta['published_time'] }}"><meta property="article:modified_time" content="{{ $meta['modified_time'] }}">@endif
+    @if(!empty($meta['author_url']))<meta property="article:author" content="{{ $meta['author_url'] }}">@endif
+    @if(!empty($meta['section']))<meta property="article:section" content="{{ $meta['section'] }}">@endif
+    @foreach(($meta['tags'] ?? []) as $tag)<meta property="article:tag" content="{{ $tag }}">@endforeach
+    @if(setting('seo.facebook_page'))<meta property="article:publisher" content="{{ setting('seo.facebook_page') }}">@endif
     <meta name="twitter:card" content="{{ $meta['twitter_card'] }}">
+    @if(!empty($meta['twitter_creator']))<meta name="twitter:creator" content="{{ $meta['twitter_creator'] }}">@endif
     @if(setting('seo.twitter_handle'))<meta name="twitter:site" content="{{ setting('seo.twitter_handle') }}">@endif
     <meta name="twitter:title" content="{{ $meta['og_title'] }}">
     <meta name="twitter:description" content="{{ $meta['og_description'] }}">

@@ -43,6 +43,13 @@ class SeoService
             'og_description' => null,
             'og_image' => media_url(setting('site.organization_logo')) ?: media_url(setting('site.logo')),
             'twitter_card' => 'summary_large_image',
+            'twitter_creator' => null,
+            'keywords' => setting('seo.keywords') ?: $this->defaultKeywords(),
+            'author' => null,
+            'publisher' => setting('site.organization_name') ?: $this->siteName(),
+            'locale' => setting('seo.locale', 'en_US'),
+            'section' => null,
+            'tags' => [],
             'schema' => [],
         ];
         $m = array_merge($base, array_filter($overrides, fn ($v) => $v !== null));
@@ -74,7 +81,15 @@ class SeoService
             'published_time' => $post->published_at?->toIso8601String(),
             'modified_time' => $post->updated_at?->toIso8601String(),
             'author' => $post->author?->name,
-            'keyword' => $post->focus_keyword,
+            'author_url' => $post->author?->url,
+            'twitter_creator' => $this->twitterHandle($post->author?->social_links['twitter'] ?? null),
+            'keywords' => $this->joinKeywords(array_merge(
+                $post->focus_keyword ? [$post->focus_keyword] : [],
+                $post->tags->pluck('name')->all(),
+                $post->category ? [$post->category->name] : []
+            )),
+            'section' => $post->category?->name,
+            'tags' => $post->tags->pluck('name')->all(),
         ]);
     }
 
@@ -102,6 +117,46 @@ class SeoService
             'og_image' => media_url($p->og_image),
             'schema' => [$this->breadcrumbSchema([['Home', url('/')], [$p->title, $p->url]])],
         ]);
+    }
+
+    /** Comma-joined, case-insensitively unique keyword list (max 10). */
+    public function joinKeywords(array $words): ?string
+    {
+        $seen = [];
+        $out = [];
+        foreach ($words as $w) {
+            $w = trim((string) $w);
+            $k = mb_strtolower($w);
+            if ($w === '' || isset($seen[$k])) {
+                continue;
+            }
+            $seen[$k] = true;
+            $out[] = $w;
+        }
+        return $out ? implode(', ', array_slice($out, 0, 10)) : null;
+    }
+
+    protected function defaultKeywords(): ?string
+    {
+        try {
+            $names = \Illuminate\Support\Facades\Cache::remember('seo.default_keywords', 600, fn () => Category::active()->topLevel()->orderBy('sort_order')->limit(8)->pluck('name')->all());
+        } catch (\Throwable) {
+            $names = [];
+        }
+        return $this->joinKeywords(array_merge([$this->siteName()], $names));
+    }
+
+    /** Normalise a Twitter/X profile URL or handle to "@handle". */
+    public function twitterHandle(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+        if (preg_match('~(?:twitter\.com|x\.com)/@?([A-Za-z0-9_]{1,15})~i', $value, $m)) {
+            return '@'.$m[1];
+        }
+        return preg_match('/^@?[A-Za-z0-9_]{1,15}$/', $value) ? '@'.ltrim($value, '@') : null;
     }
 
     // ---- Schema builders ----
