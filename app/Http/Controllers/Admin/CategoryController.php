@@ -73,7 +73,7 @@ class CategoryController extends Controller
 
     protected function validated(Request $request, ?Category $c = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:150',
             'slug' => ['nullable', 'string', 'max:180', 'regex:/^[a-z0-9-]+$/', Rule::unique('categories', 'slug')->ignore($c?->id)],
             'parent_id' => 'nullable|integer|exists:categories,id',
@@ -84,6 +84,9 @@ class CategoryController extends Controller
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'sort_order' => 'nullable|integer|min:0',
         ]);
+        $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
+        $data['parent_id'] = $data['parent_id'] ?: null;
+        return $data;
     }
 
     protected function flush(): void

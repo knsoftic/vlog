@@ -85,6 +85,7 @@ class PageController extends Controller
             'og_image' => 'nullable|string|max:500',
         ]);
         $data['content'] = $this->sanitizer->clean($data['content'] ?? '');
+        $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
         $data['show_in_footer'] = $request->boolean('show_in_footer');
         $data['show_in_header'] = $request->boolean('show_in_header');
         return $data;

@@ -62,6 +62,7 @@ class MonetizationController extends Controller
         foreach (['enabled', 'desktop', 'tablet', 'mobile'] as $b) {
             $data[$b] = $request->boolean($b);
         }
+        $data['paragraph_offset'] = (int) ($data['paragraph_offset'] ?? ($slot->paragraph_offset ?: 3));
         $original = $slot->getOriginal();
         $slot->fill($data);
         $warnings = $slot->policyWarnings();
