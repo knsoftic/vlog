@@ -32,7 +32,7 @@
         ['Settings', null, 'admin.settings.*|admin.backups.*', 'settings.manage', 'M10.3 4.3a1 1 0 0 1 3.4 0l.3 1.2a7 7 0 0 1 1.7 1l1.2-.4a1 1 0 0 1 1.2 1.5l-.9.9a7 7 0 0 1 0 2l.9.9a1 1 0 0 1-1.2 1.5l-1.2-.4a7 7 0 0 1-1.7 1l-.3 1.2a1 1 0 0 1-3.4 0l-.3-1.2a7 7 0 0 1-1.7-1l-1.2.4a1 1 0 0 1-1.2-1.5l.9-.9a7 7 0 0 1 0-2l-.9-.9a1 1 0 0 1 1.2-1.5l1.2.4a7 7 0 0 1 1.7-1z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', [
             ['General', 'admin.settings.edit', 'admin.settings.edit', null, 'general'], ['Branding', 'admin.settings.edit', null, null, 'branding'], ['Analytics', 'admin.settings.edit', null, null, 'analytics'],
             ['Google Integrations', 'admin.settings.edit', null, null, 'google'], ['Email', 'admin.settings.edit', null, null, 'email'], ['Cookie Consent', 'admin.settings.edit', null, null, 'consent'],
-            ['SEO', 'admin.settings.edit', null, null, 'seo'], ['Backup', 'admin.backups.index', 'admin.backups.*', 'backups.manage'], ['Performance', 'admin.settings.edit', null, null, 'performance'], ['Security', 'admin.settings.edit', null, null, 'security'],
+            ['SEO', 'admin.settings.edit', null, null, 'seo'], ['Custom Code', 'admin.settings.edit', null, null, 'code'], ['Backup', 'admin.backups.index', 'admin.backups.*', 'backups.manage'], ['Performance', 'admin.settings.edit', null, null, 'performance'], ['Security', 'admin.settings.edit', null, null, 'security'],
         ]],
     ];
 @endphp

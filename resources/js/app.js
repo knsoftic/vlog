@@ -98,7 +98,7 @@ function loadThirdParty(c) {
         s.onload = () => { $$('ins.adsbygoogle:not([data-adsbygoogle-status])').forEach(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {} }); };
         document.head.appendChild(s);
     }
-    if (cfg.ga4 && !gaLoaded && c.analytics) {
+    if (cfg.ga4 && !gaLoaded && (c.analytics || cfg.gtagLoad === 'always')) {
         gaLoaded = true;
         const s = document.createElement('script');
         s.async = true;

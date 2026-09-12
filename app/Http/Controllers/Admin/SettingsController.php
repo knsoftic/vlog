@@ -48,8 +48,9 @@ class SettingsController extends Controller
                 'analytics.heartbeat_seconds' => ['Engagement heartbeat interval (seconds)', 'number'],
                 'analytics.retention_days' => ['Raw analytics retention (days)', 'select', 'Aggregates are kept; raw sessions/page views are deleted after this period.', ['30' => '30 days', '90' => '90 days', '180' => '180 days', '365' => '1 year', '730' => '2 years']],
                 'analytics.security_retention_days' => ['Security & admin log retention (days)', 'select', 'IPs are anonymised after this period.', ['30' => '30 days', '90' => '90 days', '180' => '180 days', '365' => '1 year']],
-                'analytics.ga4_enabled' => ['Enable Google Analytics 4', 'bool'],
-                'analytics.ga4_id' => ['GA4 Measurement ID', 'text', 'G-XXXXXXXXXX'],
+                'analytics.ga4_enabled' => ['Enable Google tag (Google Analytics 4)', 'bool', 'Installs the Google tag (gtag.js) on every page. No need to paste the snippet manually.'],
+                'analytics.ga4_id' => ['Google tag ID / GA4 Measurement ID', 'text', 'G-XXXXXXXXXX (GA4), GT-XXXXXXX (Google tag) or AW-XXXXXXXXX (Google Ads).'],
+                'analytics.gtag_load' => ['When to load the Google tag', 'select', 'Advanced = load immediately with Consent Mode defaults (Google recommended, needed for tag verification). Basic = load only after the visitor accepts analytics cookies.', ['always' => 'Advanced consent mode (load immediately)', 'consent' => 'Basic consent mode (after consent only)']],
             ]],
             'google' => ['title' => 'Google Integrations', 'fields' => [
                 'google.client_id' => ['OAuth Client ID', 'text', 'From Google Cloud Console → Credentials (Web application).'],
@@ -87,6 +88,10 @@ class SettingsController extends Controller
                 'seo.noindex_thin' => ['Noindex thin / placeholder pages', 'bool'],
                 'seo.sitemap_enabled' => ['Enable sitemap.xml', 'bool'],
                 'seo.robots_extra' => ['Extra robots.txt rules', 'textarea'],
+            ]],
+            'code' => ['title' => 'Custom Code', 'fields' => [
+                'code.head' => ['Head code', 'textarea', 'Pasted as-is on every public page right after the Consent Mode defaults inside <head>. Use for Google tag, site verification, pixels. Do not paste the Google tag here if the Google tag ID above is already set (one tag per page).'],
+                'code.body_end' => ['Body end code', 'textarea', 'Pasted as-is right before </body> on every public page.'],
             ]],
             'backup' => ['title' => 'Backup', 'fields' => [
                 'backup.auto_database' => ['Automatic database backups', 'bool'],
@@ -146,8 +151,8 @@ class SettingsController extends Controller
             };
         }
         $data = $request->validate($rules);
-        if ($tab === 'analytics' && ! empty($data['analytics__ga4_id']) && ! preg_match('/^G-[A-Z0-9]{4,20}$/i', $data['analytics__ga4_id'])) {
-            return back()->withErrors(['analytics__ga4_id' => 'GA4 Measurement IDs look like G-XXXXXXXXXX.'])->withInput();
+        if ($tab === 'analytics' && ! empty($data['analytics__ga4_id']) && ! preg_match('/^(G|GT|AW|DC)-[A-Z0-9]{4,20}$/i', trim($data['analytics__ga4_id']))) {
+            return back()->withErrors(['analytics__ga4_id' => 'Google tag IDs look like G-XXXXXXXXXX, GT-XXXXXXX or AW-XXXXXXXXX.'])->withInput();
         }
         if ($tab === 'general' && ! empty($data['site__social_links']) && json_decode($data['site__social_links'], true) === null) {
             return back()->withErrors(['site__social_links' => 'Social links must be valid JSON.'])->withInput();
@@ -157,6 +162,9 @@ class SettingsController extends Controller
         foreach ($tabs[$tab]['fields'] as $key => $def) {
             $field = str_replace('.', '__', $key);
             $value = $def[1] === 'bool' ? $request->boolean($field) : ($data[$field] ?? null);
+            if ($key === 'analytics.ga4_id' && is_string($value)) {
+                $value = strtoupper(trim($value));
+            }
             if ($def[1] === 'password') {
                 if ($value === null || $value === '') {
                     continue; // keep existing secret

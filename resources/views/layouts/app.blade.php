@@ -17,6 +17,7 @@
         'consentEnabled' => setting_bool('consent.enabled', true),
         'consentRequired' => (bool) $consent['required'],
         'ga4' => $ga4,
+        'gtagLoad' => setting('analytics.gtag_load', 'consent'),
         'adsense' => $adsenseCfg,
         'postId' => $post->id ?? null,
         'postType' => $post->type ?? null,
@@ -80,6 +81,10 @@
     @endif
     @if(setting('consent.cmp') === 'external' && setting('consent.cmp_script'))
         {!! setting('consent.cmp_script') !!}
+    @endif
+    @if(!($isPreview ?? false) && trim((string) setting('code.head')) !== '')
+        {{-- Custom head code (Settings → Custom Code) --}}
+        {!! setting('code.head') !!}
     @endif
     <script>window.VH = {!! json_encode($vhConfig, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!};</script>
     @foreach(($meta['schema'] ?? []) as $schema)
@@ -190,5 +195,9 @@
         @include('partials.consent')
     @endif
     @stack('scripts')
+    @if(!($isPreview ?? false) && trim((string) setting('code.body_end')) !== '')
+        {{-- Custom body-end code (Settings → Custom Code) --}}
+        {!! setting('code.body_end') !!}
+    @endif
 </body>
 </html>
