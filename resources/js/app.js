@@ -85,7 +85,7 @@ function initConsentUI() {
 }
 
 /* ---------------- Third-party loaders (only after consent) ---------------- */
-let adsLoaded = false, gaLoaded = false;
+let adsLoaded = false, gaLoaded = !!(window.VH && window.VH.gtagInline);
 function loadThirdParty(c) {
     // AdSense: in required regions, only load when advertising consent given (Consent Mode also covers this,
     // but we avoid loading the script entirely without consent to be safe).

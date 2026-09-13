@@ -18,6 +18,7 @@
         'consentRequired' => (bool) $consent['required'],
         'ga4' => $ga4,
         'gtagLoad' => setting('analytics.gtag_load', 'consent'),
+        'gtagInline' => (bool) ($ga4 && setting('analytics.gtag_load', 'consent') === 'always' && ! ($isPreview ?? false)),
         'adsense' => $adsenseCfg,
         'postId' => $post->id ?? null,
         'postType' => $post->type ?? null,
@@ -81,6 +82,16 @@
     @endif
     @if(setting('consent.cmp') === 'external' && setting('consent.cmp_script'))
         {!! setting('consent.cmp_script') !!}
+    @endif
+    @if($vhConfig['gtagInline'])
+    {{-- Google tag (gtag.js) — Settings → Analytics. Loads on every page with Consent Mode defaults already set above. --}}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ urlencode($ga4) }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ $ga4 }}', { 'anonymize_ip': true });
+    </script>
     @endif
     @if(!($isPreview ?? false) && trim((string) setting('code.head')) !== '')
         {{-- Custom head code (Settings → Custom Code) --}}
