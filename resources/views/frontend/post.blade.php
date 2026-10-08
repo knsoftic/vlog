@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $adsOn = ($adsAllowed ?? false) && setting_bool('adsense.enabled');
+    $adsOn = ($adsAllowed ?? false) && app(\App\Services\AdServing::class)->anyActive();
     $slots = $siteNav['adSlots'];
     // Split content into paragraphs to place the in-article ad after the Nth paragraph, never adjacent to the video.
     $inArticle = $slots['in_article'] ?? null;

@@ -73,6 +73,8 @@ body { @apply bg-white text-slate-800 antialiased; font-family: var(--font-sans)
 .ad-slot .adsbygoogle { display: block; width: 100%; }
 .ad-slot--sidebar .ad-slot-inner { min-height: 250px; }
 .ad-slot--header .ad-slot-inner, .ad-slot--footer .ad-slot-inner { min-height: 90px; }
+.ad-slot--adsterra .ad-slot-inner { overflow: hidden; max-width: 100%; }
+.ad-slot--adsterra iframe { max-width: 100%; }
 
 /* Cookie banner */
 .consent-banner { @apply fixed inset-x-0 bottom-0 z-50 p-4 sm:p-6; }

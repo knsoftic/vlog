@@ -36,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(HtmlSanitizer::class);
         $this->app->singleton(SeoService::class);
         $this->app->singleton(AnalyticsService::class);
+        $this->app->singleton(\App\Services\AdServing::class);
     }
 
     public function boot(): void
@@ -92,7 +93,7 @@ class AppServiceProvider extends ServiceProvider
                     'headerMenu' => $menuFilter(MenuItem::where('location', 'header')->where('is_active', true)->orderBy('sort_order')->get()),
                     'footerMenu' => $menuFilter(MenuItem::where('location', 'footer')->where('is_active', true)->orderBy('sort_order')->get()),
                     'footerPages' => Page::published()->where('show_in_footer', true)->orderBy('sort_order')->get(['title', 'slug']),
-                    'adSlots' => AdSlot::where('enabled', true)->get()->keyBy('key'),
+                    'adSlots' => AdSlot::where(fn ($q) => $q->where('enabled', true)->orWhere('adsterra_enabled', true))->get()->keyBy('key'),
                 ];
             });
         } catch (\Throwable) {

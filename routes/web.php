@@ -143,6 +143,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('settings', [Admin\MonetizationController::class, 'settings'])->name('settings');
             Route::put('settings', [Admin\MonetizationController::class, 'updateSettings'])->name('settings.update');
             Route::get('checklist', [Admin\MonetizationController::class, 'checklist'])->name('checklist');
+            Route::get('adsterra', [Admin\MonetizationController::class, 'adsterra'])->name('adsterra');
+            Route::put('adsterra/settings', [Admin\MonetizationController::class, 'updateAdsterraSettings'])->name('adsterra.settings');
+            Route::put('adsterra/slots/{slot}', [Admin\MonetizationController::class, 'updateAdsterraSlot'])->name('adsterra.slot');
         });
 
         // ---- Pages & appearance ----

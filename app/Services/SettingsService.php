@@ -71,6 +71,10 @@ class SettingsService
             'adsense.ads_txt' => '',
             'adsense.ads_txt_updated_at' => '',
             'adsense.min_words_for_ads' => '150',
+            // Adsterra (Banner / Native Banner only)
+            'adsterra.enabled' => '0',
+            'adsterra.pause_when_adsense' => '1',
+            'adsterra.require_consent' => '1',
             // Cookie consent
             'consent.enabled' => '1',
             'consent.mode' => 'auto',        // auto|always|never  (auto = required regions only)

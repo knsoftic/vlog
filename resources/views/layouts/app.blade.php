@@ -1,14 +1,13 @@
 @php
     $meta = $meta ?? app(\App\Services\SeoService::class)->meta();
     $consent = app(\App\Http\Middleware\TrackPageView::class)->consentState(request());
-    $adsEnabled = setting_bool('adsense.enabled') && setting('adsense.client_id') && !(auth()->check() && setting_bool('adsense.hide_for_admins', true)) && !($isPreview ?? false);
-    $adsAllowed = ($adsAllowed ?? true) && $adsEnabled;
-    $isBot = app(\App\Services\BotDetector::class)->classify(request())['is_bot'];
-    if ($isBot && setting_bool('adsense.hide_for_bots', true)) { $adsAllowed = false; }
+    $adServing = app(\App\Services\AdServing::class);
+    $adsAllowed = ($adsAllowed ?? true) && !($isPreview ?? false) && $adServing->viewerEligible() && $adServing->anyActive();
+    $adsenseServing = $adsAllowed && $adServing->adsenseActive();
     $brand = setting('brand.primary_color', '#e11d48');
     $ga4 = setting_bool('analytics.ga4_enabled') && setting('analytics.ga4_id') ? setting('analytics.ga4_id') : null;
     $socialLinks = json_decode((string) setting('site.social_links', '{}'), true) ?: [];
-    $adsenseCfg = $adsAllowed ? ['client' => 'ca-'.ltrim(str_replace('ca-', '', (string) setting('adsense.client_id')), '-'), 'lazy' => setting_bool('adsense.lazy_load', true)] : null;
+    $adsenseCfg = $adsenseServing ? ['client' => 'ca-'.ltrim(str_replace('ca-', '', (string) setting('adsense.client_id')), '-'), 'lazy' => setting_bool('adsense.lazy_load', true)] : null;
     $vhRoutes = ['consent' => route('consent.store'), 'heartbeat' => route('track.heartbeat'), 'video' => route('track.video'), 'event' => route('track.event'), 'suggest' => route('search.suggest')];
     $vhConfig = [
         'csrf' => csrf_token(),
@@ -62,7 +61,7 @@
     @if(setting('site.favicon'))<link rel="icon" href="{{ media_url(setting('site.favicon')) }}">@endif
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    @if($adsAllowed)<link rel="preconnect" href="https://pagead2.googlesyndication.com">@endif
+    @if($adsenseServing)<link rel="preconnect" href="https://pagead2.googlesyndication.com">@endif
     <style>:root{--brand:{{ $brand }};--accent:{{ setting('brand.accent_color', '#0f172a') }}}</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

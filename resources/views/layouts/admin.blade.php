@@ -17,7 +17,7 @@
             ['Redirects', 'admin.seo.redirects', 'admin.seo.redirects', null], ['Broken Links', 'admin.seo.broken-links', 'admin.seo.broken-links', null],
         ]],
         ['Monetization', null, 'admin.monetization.*', 'monetization.manage', 'M12 8c-2 0-3 1-3 2s1 2 3 2 3 1 3 2-1 2-3 2m0-8V6m0 10v2m9-6a9 9 0 1 1-18 0 9 9 0 0 1 18 0z', [
-            ['AdSense Dashboard', 'admin.monetization.dashboard', 'admin.monetization.dashboard', null], ['Ad Units', 'admin.monetization.ad-units', 'admin.monetization.ad-units', null], ['Ad Placement', 'admin.monetization.placement', 'admin.monetization.placement', null],
+            ['AdSense Dashboard', 'admin.monetization.dashboard', 'admin.monetization.dashboard', null], ['Ad Units', 'admin.monetization.ad-units', 'admin.monetization.ad-units', null], ['Adsterra Banners', 'admin.monetization.adsterra', 'admin.monetization.adsterra', null], ['Ad Placement', 'admin.monetization.placement', 'admin.monetization.placement', null],
             ['Ads.txt', 'admin.monetization.ads-txt', 'admin.monetization.ads-txt', null], ['Monetization Settings', 'admin.monetization.settings', 'admin.monetization.settings', null], ['Policy Checklist', 'admin.monetization.checklist', 'admin.monetization.checklist', null],
         ]],
         ['Pages', null, 'admin.pages.*|admin.appearance', 'pages.manage', 'M7 3h7l5 5v13H7z M14 3v5h5', [

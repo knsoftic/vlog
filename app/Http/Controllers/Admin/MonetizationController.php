@@ -181,6 +181,65 @@ class MonetizationController extends Controller
         }
     }
 
+    public function adsterra(\App\Services\AdServing $serving)
+    {
+        $slots = AdSlot::orderBy('sort_order')->get();
+        return view('admin.monetization.adsterra', compact('slots', 'serving'));
+    }
+
+    public function updateAdsterraSettings(Request $request)
+    {
+        $pairs = [
+            'adsterra.enabled' => $request->boolean('adsterra_enabled'),
+            'adsterra.pause_when_adsense' => $request->boolean('adsterra_pause_when_adsense'),
+            'adsterra.require_consent' => $request->boolean('adsterra_require_consent'),
+        ];
+        $before = [];
+        foreach ($pairs as $k => $v) {
+            $before[$k] = setting($k);
+        }
+        $this->settings->setMany($pairs, 'adsterra');
+        Cache::forget('site.nav');
+        $this->audit->log('adsense_changed', 'monetization', null, 'Adsterra settings updated', $before, $pairs);
+        $msg = 'Adsterra settings saved.';
+        if ($pairs['adsterra.enabled'] && ! $pairs['adsterra.pause_when_adsense'] && setting_bool('adsense.enabled')) {
+            return back()->with('success', $msg)->with('warning', 'Adsterra and AdSense will now serve on the same site. Keep Adsterra to Banner / Native only, and pause it before requesting AdSense review.');
+        }
+        return back()->with('success', $msg);
+    }
+
+    public function updateAdsterraSlot(Request $request, AdSlot $slot)
+    {
+        $data = $request->validate([
+            'adsterra_code' => 'nullable|string|max:5000',
+            'adsterra_code_mobile' => 'nullable|string|max:5000',
+        ]);
+        $data['adsterra_enabled'] = $request->boolean('adsterra_enabled');
+        $data['adsterra_code'] = trim((string) ($data['adsterra_code'] ?? '')) ?: null;
+        $data['adsterra_code_mobile'] = trim((string) ($data['adsterra_code_mobile'] ?? '')) ?: null;
+        foreach (['adsterra_code' => 'Banner / Native code', 'adsterra_code_mobile' => 'Mobile code'] as $field => $label) {
+            if ($problems = AdSlot::adsterraCodeProblems($data[$field])) {
+                return back()->withErrors([$field => $label.': '.implode(' ', $problems)])->withInput();
+            }
+        }
+        if ($data['adsterra_code_mobile'] && ($size = $slot->adsterraSize($data['adsterra_code_mobile'])) && $size[0] > AdSlot::MOBILE_MAX_WIDTH) {
+            return back()->withErrors(['adsterra_code_mobile' => "Mobile code is {$size[0]}px wide. Use a 320x50 or 300x250 banner for phones."])->withInput();
+        }
+        if ($data['adsterra_enabled'] && ! $data['adsterra_code']) {
+            return back()->withErrors(['adsterra_code' => 'Paste the Banner / Native code before enabling this slot.'])->withInput();
+        }
+        $original = $slot->getOriginal();
+        $slot->update($data);
+        Cache::forget('site.nav');
+        $this->audit->logModelChange('adsense_changed', 'monetization', $slot, $original, 'Adsterra slot updated: '.$slot->name);
+        $msg = 'Adsterra code for '.$slot->name.' saved.';
+        $size = $slot->adsterraSize($slot->adsterra_code);
+        if ($slot->adsterra_enabled && $slot->mobile && ! $slot->adsterra_code_mobile && $size && $size[0] > AdSlot::MOBILE_MAX_WIDTH) {
+            return back()->with('success', $msg)->with('warning', "This {$size[0]}x{$size[1]} banner is too wide for phones, so it will be skipped on mobile. Add a 320x50 or 300x250 mobile code.");
+        }
+        return back()->with('success', $msg);
+    }
+
     /** Pre-launch policy review checklist */
     public function checklist()
     {
@@ -199,6 +258,8 @@ class MonetizationController extends Controller
             ['label' => 'Ad label is neutral ("Advertisement")', 'ok' => ! preg_match('/click|support/i', (string) setting('adsense.label', 'Advertisement'))],
             ['label' => 'At least 10 published, original, non-thin posts', 'ok' => \App\Models\Post::published()->where('word_count', '>=', 300)->count() >= 10],
             ['label' => 'Sitemap enabled and robots.txt served', 'ok' => setting_bool('seo.sitemap_enabled', true)],
+            ['label' => 'No other ad network serving next to AdSense during review (Adsterra off or paused)', 'ok' => ! (setting_bool('adsense.enabled') && app(\App\Services\AdServing::class)->adsterraActive())],
+            ['label' => 'Adsterra slots contain only Banner / Native codes (no Popunder, Social Bar, Smartlink)', 'ok' => $slots->every(fn ($s) => ! AdSlot::adsterraCodeProblems($s->adsterra_code) && ! AdSlot::adsterraCodeProblems($s->adsterra_code_mobile))],
             ['label' => 'Sidebar ad disabled on mobile (readability)', 'ok' => ! ($slots->firstWhere('key', 'sidebar')?->mobile ?? false)],
         ];
         return view('admin.monetization.checklist', compact('checks'));
