@@ -99,11 +99,17 @@ class AdSlot extends Model
         if (mb_strlen($code) > 5000) {
             $problems[] = 'Code is too long (max 5000 characters).';
         }
-        $hasLoader = (bool) preg_match('~<script\b[^>]*\bsrc\s*=\s*["\']?(?:https?:)?//~i', $code);
-        $isBanner = (bool) preg_match('~atOptions\s*=\s*\{.*?["\']key["\']\s*:\s*["\'][A-Za-z0-9]{8,64}["\']~is', $code);
+        // Loader: a real <script src="//…">, or the document.write('<scr'+'ipt src="//…">') variant some banner sizes use.
+        $hasLoader = (bool) preg_match('~<script\b[^>]*\bsrc\s*=\s*["\']?(?:https?:)?//~i', $code)
+            || (bool) preg_match('~document\.write\s*\(.*?src\s*=\s*[^/\s>]{0,3}(?:https?:)?//~is', $code);
+        $isBanner = (bool) preg_match('~atOptions\s*=\s*\{.*?["\']?key["\']?\s*:\s*["\'][A-Za-z0-9]{8,64}["\']~is', $code);
         $isNative = (bool) preg_match('~id\s*=\s*["\']container-[A-Za-z0-9]{8,64}["\']~i', $code);
-        if (! $hasLoader || (! $isBanner && ! $isNative)) {
-            $problems[] = 'This is not an Adsterra Banner or Native Banner code. Banner codes have an "atOptions = { \'key\' : … }" block and a <script src>; Native Banner codes have a <script src> and a <div id="container-…">. Put Popunder, Social Bar and Smartlink in their own section below.';
+        if (! $isBanner && ! $isNative) {
+            $problems[] = preg_match('~atOptions~i', $code)
+                ? 'The "atOptions" block has no ad key. Copy the complete code again from Adsterra → Get code.'
+                : 'This is not an Adsterra Banner or Native Banner code: no "atOptions" block (Banner) or <div id="container-…"> (Native Banner) was found. Popunder, Social Bar and Smartlink go in the site-wide section.';
+        } elseif (! $hasLoader) {
+            $problems[] = 'The loader <script src="…"> line is missing. Copy both script tags from Adsterra → Get code.';
         }
         if (preg_match('/window\.open|location\.(href|replace|assign)|\.click\(\)|onclick\s*=|setInterval|addEventListener\(\s*[\'"](click|mousedown|touchstart)/i', $code)) {
             $problems[] = 'Code contains redirect, auto-click or popup logic, which is not allowed in a banner slot.';
@@ -112,6 +118,23 @@ class AdSlot extends Model
             $problems[] = 'Links are not allowed in a banner slot. Use the Smartlink field for direct links.';
         }
         return $problems;
+    }
+
+    /**
+     * Undo common copy/paste damage before validating or saving: HTML-escaped tags (&lt;script&gt;),
+     * curly quotes from word processors / chat apps, and non-breaking spaces.
+     */
+    public static function normalizeAdCode(?string $code): string
+    {
+        $code = trim((string) $code);
+        if ($code === '') {
+            return '';
+        }
+        if (stripos($code, '&lt;script') !== false) {
+            $code = html_entity_decode($code, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+        $code = str_replace(["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "\u{00A0}"], ["'", "'", '"', '"', ' '], $code);
+        return trim($code);
     }
 
     /**

@@ -216,6 +216,9 @@ class MonetizationController extends Controller
             'smartlink_url' => ['nullable', 'url', 'max:1000', 'regex:~^https://~i'],
             'smartlink_label' => 'nullable|string|max:60',
         ], ['smartlink_url.regex' => 'Smartlink must be an https:// URL.']);
+        foreach (['popunder_code', 'socialbar_code'] as $field) {
+            $data[$field] = AdSlot::normalizeAdCode($data[$field] ?? null);
+        }
         foreach (['popunder_code' => 'Popunder', 'socialbar_code' => 'Social Bar'] as $field => $label) {
             if ($problems = AdSlot::adsterraScriptProblems($data[$field] ?? null)) {
                 return back()->withErrors([$field => $label.': '.implode(' ', $problems)])->withInput();
@@ -255,8 +258,8 @@ class MonetizationController extends Controller
             'adsterra_code_mobile' => 'nullable|string|max:5000',
         ]);
         $data['adsterra_enabled'] = $request->boolean('adsterra_enabled');
-        $data['adsterra_code'] = trim((string) ($data['adsterra_code'] ?? '')) ?: null;
-        $data['adsterra_code_mobile'] = trim((string) ($data['adsterra_code_mobile'] ?? '')) ?: null;
+        $data['adsterra_code'] = AdSlot::normalizeAdCode($data['adsterra_code'] ?? null) ?: null;
+        $data['adsterra_code_mobile'] = AdSlot::normalizeAdCode($data['adsterra_code_mobile'] ?? null) ?: null;
         foreach (['adsterra_code' => 'Banner / Native code', 'adsterra_code_mobile' => 'Mobile code'] as $field => $label) {
             if ($problems = AdSlot::adsterraCodeProblems($data[$field])) {
                 return back()->withErrors([$field => $label.': '.implode(' ', $problems)])->withInput();

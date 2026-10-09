@@ -164,6 +164,28 @@ HTML;
         $this->assertSame([468, 60], $slot->fresh()->adsterraSize($slot->fresh()->adsterra_code));
     }
 
+    public function test_banner_code_variants_and_copy_paste_damage_are_accepted(): void
+    {
+        $key = 'fedcba9876543210fedcba9876543210';
+        $docWrite = "<script type=\"text/javascript\">\n\tatOptions = {\n\t\t'key' : '{$key}',\n\t\t'format' : 'iframe',\n\t\t'height' : 50,\n\t\t'width' : 320,\n\t\t'params' : {}\n\t};\n\tdocument.write('<scr' + 'ipt type=\"text/javascript\" src=\"//www.highperformanceformat.com/{$key}/invoke.js\"></scr' + 'ipt>');\n</script>";
+        $this->assertSame([], AdSlot::adsterraCodeProblems($docWrite), 'document.write variant');
+
+        $curly = str_replace("'", "\u{2019}", self::BANNER_320);
+        $this->assertSame([], AdSlot::adsterraCodeProblems(AdSlot::normalizeAdCode($curly)), 'curly quotes');
+
+        $escaped = htmlspecialchars(self::BANNER_320, ENT_QUOTES);
+        $this->assertSame([], AdSlot::adsterraCodeProblems(AdSlot::normalizeAdCode($escaped)), 'html-escaped');
+
+        $missingLoader = "<script>atOptions = { 'key' : '{$key}', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {} };</script>";
+        $this->assertStringContainsString('loader', AdSlot::adsterraCodeProblems($missingLoader)[0]);
+
+        $slot = AdSlot::where('key', 'header')->firstOrFail();
+        $this->actingAs($this->admin)->put("/admin/monetization/adsterra/slots/{$slot->id}", ['adsterra_enabled' => 1, 'adsterra_code' => self::BANNER_728, 'adsterra_code_mobile' => $escaped])
+            ->assertSessionHasNoErrors();
+        $this->assertStringStartsWith('<script', $slot->fresh()->adsterra_code_mobile);
+        $this->assertSame([320, 50], $slot->fresh()->adsterraSize($slot->fresh()->adsterra_code_mobile));
+    }
+
     public function test_popunder_and_social_bar_load_only_while_adsense_is_off(): void
     {
         $social = "<script src='//pl28123456.effectivegatecpm.com/aa/bb/cc/aabbccsocial.js'></script>";
