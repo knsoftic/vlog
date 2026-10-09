@@ -29,6 +29,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="google-adsense-account" content="ca-pub-8974105209569792">
+    @if(setting('monetag.verify_meta'))<meta name="monetag" content="{{ setting('monetag.verify_meta') }}">@endif
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $meta['title'] }}</title>
     <meta name="description" content="{{ $meta['description'] }}">
@@ -207,7 +208,7 @@
     @endif
     @stack('scripts')
     @unless($isPreview ?? false)
-        @foreach($adServing->scriptFormats() as $adFormat => $adCode)
+        @foreach(array_merge($adServing->scriptFormats(), $adServing->monetagFormats()) as $adFormat => $adCode)
             {{-- Adsterra {{ $adFormat }} (Monetization → Adsterra Banners). Never loads while AdSense is enabled. --}}
             {!! $adCode !!}
         @endforeach

@@ -23,6 +23,20 @@ class SeoController extends Controller
         return response($seo->robotsTxt(), 200, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'public, max-age=3600']);
     }
 
+    /** Monetag push service worker (Admin → Monetization → Monetag). */
+    public function serviceWorker()
+    {
+        $js = trim((string) setting('monetag.sw_js'));
+        if ($js === '') {
+            abort(404);
+        }
+        return response($js."\n", 200, [
+            'Content-Type' => 'application/javascript; charset=UTF-8',
+            'Service-Worker-Allowed' => '/',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
     public function adsTxt(AdsTxtService $ads)
     {
         return response($ads->content(), 200, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'public, max-age=3600']);

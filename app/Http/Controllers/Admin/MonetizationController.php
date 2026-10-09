@@ -307,6 +307,7 @@ class MonetizationController extends Controller
             ['label' => 'No other ad network serving next to AdSense during review (Adsterra off or paused)', 'ok' => ! (setting_bool('adsense.enabled') && app(\App\Services\AdServing::class)->adsterraActive())],
             ['label' => 'Adsterra slots contain only Banner / Native codes (no Popunder, Social Bar, Smartlink)', 'ok' => $slots->every(fn ($s) => ! AdSlot::adsterraCodeProblems($s->adsterra_code) && ! AdSlot::adsterraCodeProblems($s->adsterra_code_mobile))],
             ['label' => 'Adsterra Popunder and Social Bar are off (AdSense does not allow pop-unders)', 'ok' => ! (setting_bool('adsterra.enabled') && (setting_bool('adsterra.popunder_enabled') || setting_bool('adsterra.socialbar_enabled')))],
+            ['label' => 'Monetag is off (pop-under, push prompts and interstitials are not allowed with AdSense)', 'ok' => ! setting_bool('monetag.enabled')],
             ['label' => 'Sidebar ad disabled on mobile (readability)', 'ok' => ! ($slots->firstWhere('key', 'sidebar')?->mobile ?? false)],
         ];
         return view('admin.monetization.checklist', compact('checks'));

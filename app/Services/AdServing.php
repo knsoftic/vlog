@@ -98,6 +98,46 @@ class AdServing
         return ['url' => $url, 'label' => setting('adsterra.smartlink_label') ?: 'Sponsored offer'];
     }
 
+    /** Monetag formats may load: Monetag on, AdSense OFF (hard rule), consent given, real visitor. */
+    public function monetagAllowed(): bool
+    {
+        if (! setting_bool('monetag.enabled') || $this->adsenseActive() || ! $this->viewerEligible()) {
+            return false;
+        }
+        return ! setting_bool('monetag.require_consent', true) || (bool) ($this->consent()['advertising'] ?? false);
+    }
+
+    /** @return array<string,string> Monetag tags to print before </body> */
+    public function monetagFormats(): array
+    {
+        if (! $this->monetagAllowed()) {
+            return [];
+        }
+        $out = [];
+        foreach (array_keys(Monetag::FORMATS) as $f) {
+            $code = trim((string) setting("monetag.{$f}_code"));
+            if (setting_bool("monetag.{$f}_enabled") && $code !== '' && ! Monetag::tagProblems($code)) {
+                $out["monetag-{$f}"] = $code;
+            }
+        }
+        return $out;
+    }
+
+    /** Sponsored links (Adsterra Smartlink, Monetag Direct Link) to show under articles. */
+    public function sponsoredLinks(): array
+    {
+        $links = [];
+        if ($l = $this->smartlink()) {
+            $links[] = $l;
+        }
+        $url = trim((string) setting('monetag.directlink_url'));
+        if (setting_bool('monetag.directlink_enabled') && $url !== '' && $this->monetagAllowed()
+            && preg_match('~^https://~i', $url) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+            $links[] = ['url' => $url, 'label' => setting('monetag.directlink_label') ?: 'Sponsored offer'];
+        }
+        return $links;
+    }
+
     public function viewerEligible(): bool
     {
         $this->sync();

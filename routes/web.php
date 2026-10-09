@@ -31,6 +31,7 @@ Route::middleware('traffic')->group(function () {
     Route::get('/sitemap.xml', [Frontend\SeoController::class, 'sitemap'])->name('sitemap');
     Route::get('/robots.txt', [Frontend\SeoController::class, 'robots'])->name('robots');
     Route::get('/ads.txt', [Frontend\SeoController::class, 'adsTxt'])->name('ads-txt');
+    Route::get('/sw.js', [Frontend\SeoController::class, 'serviceWorker'])->name('service-worker');
     Route::get('/api/search/suggest', [Frontend\SearchController::class, 'suggest'])->name('search.suggest');
     Route::post('/api/consent', [Frontend\ConsentController::class, 'store'])->name('consent.store');
     // First-party tracking beacons (CSRF exempt, rate limited)
@@ -147,6 +148,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('adsterra/settings', [Admin\MonetizationController::class, 'updateAdsterraSettings'])->name('adsterra.settings');
             Route::put('adsterra/slots/{slot}', [Admin\MonetizationController::class, 'updateAdsterraSlot'])->name('adsterra.slot');
             Route::put('adsterra/formats', [Admin\MonetizationController::class, 'updateAdsterraFormats'])->name('adsterra.formats');
+            Route::get('monetag', [Admin\MonetagController::class, 'index'])->name('monetag');
+            Route::put('monetag', [Admin\MonetagController::class, 'update'])->name('monetag.update');
         });
 
         // ---- Pages & appearance ----

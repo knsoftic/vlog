@@ -85,13 +85,15 @@
                 </div>
             </div>
 
-            @if(($adsAllowed ?? false) && ! ($isPreview ?? false) && ($smartlink = app(\App\Services\AdServing::class)->smartlink()))
+            @if(($adsAllowed ?? false) && ! ($isPreview ?? false))
+                @foreach(app(\App\Services\AdServing::class)->sponsoredLinks() as $sponsored)
                 <aside class="ad-slot ad-slot--smartlink" aria-label="Sponsored">
                     <div class="ad-slot-inner" style="min-height:auto">
                         <span class="ad-label">Sponsored</span>
-                        <a href="{{ $smartlink['url'] }}" target="_blank" rel="sponsored nofollow noopener" class="text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-900">{{ $smartlink['label'] }} &#8599;</a>
+                        <a href="{{ $sponsored['url'] }}" target="_blank" rel="sponsored nofollow noopener" class="text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-900">{{ $sponsored['label'] }} &#8599;</a>
                     </div>
                 </aside>
+                @endforeach
             @endif
             @if($adsOn && isset($slots['below_content']))
                 @include('partials.ad', ['slot' => $slots['below_content'], 'adsAllowed' => $adsOn])
