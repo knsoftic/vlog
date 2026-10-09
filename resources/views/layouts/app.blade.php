@@ -28,6 +28,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
+    <meta name="google-adsense-account" content="ca-pub-8974105209569792">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $meta['title'] }}</title>
     <meta name="description" content="{{ $meta['description'] }}">
