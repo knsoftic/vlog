@@ -85,7 +85,10 @@
                 <p class="text-xs text-slate-500">{{ $s->position }} · shows on:
                     {{ collect(['desktop' => 'Desktop', 'tablet' => 'Tablet', 'mobile' => 'Mobile'])->filter(fn ($l, $k) => $s->{$k})->implode(', ') ?: 'no devices' }}</p>
             </div>
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="adsterra_enabled" value="1" class="checkbox" x-model="on"> <span x-text="on ? 'Enabled' : 'Disabled'"></span></label>
+            <label class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold" :class="on ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-rose-300 bg-rose-50 text-rose-700'">
+                <input type="checkbox" name="adsterra_enabled" value="1" class="checkbox" x-model="on" @checked($s->adsterra_enabled)>
+                <span x-text="on ? 'ON: showing on site' : 'OFF: tick to show'">{{ $s->adsterra_enabled ? 'ON: showing on site' : 'OFF: tick to show' }}</span>
+            </label>
         </div>
         @foreach($problems as $p)<p class="alert-warning mb-0">{{ $p }}</p>@endforeach
         @if($s->enabled && $adsenseOn)<p class="alert-info mb-0">AdSense is active on this slot, so AdSense will be shown here instead of Adsterra.</p>@endif

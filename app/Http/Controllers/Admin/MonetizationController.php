@@ -276,6 +276,9 @@ class MonetizationController extends Controller
         Cache::forget('site.nav');
         $this->audit->logModelChange('adsense_changed', 'monetization', $slot, $original, 'Adsterra slot updated: '.$slot->name);
         $msg = 'Adsterra code for '.$slot->name.' saved.';
+        if ($slot->adsterra_code && ! $slot->adsterra_enabled) {
+            return back()->with('success', $msg)->with('warning', "{$slot->name} is OFF, so this ad is not shown on the site. Tick \"OFF: tick to show\" on the card and save again to turn it on.");
+        }
         $size = $slot->adsterraSize($slot->adsterra_code);
         if ($slot->adsterra_enabled && $slot->mobile && ! $slot->adsterra_code_mobile && $size && $size[0] > AdSlot::MOBILE_MAX_WIDTH) {
             return back()->with('success', $msg)->with('warning', "This {$size[0]}x{$size[1]} banner is too wide for phones, so it will be skipped on mobile. Add a 320x50 or 300x250 mobile code.");
