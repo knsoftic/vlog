@@ -208,6 +208,46 @@ class MonetizationController extends Controller
         return back()->with('success', $msg);
     }
 
+    public function updateAdsterraFormats(Request $request)
+    {
+        $data = $request->validate([
+            'popunder_code' => 'nullable|string|max:2000',
+            'socialbar_code' => 'nullable|string|max:2000',
+            'smartlink_url' => ['nullable', 'url', 'max:1000', 'regex:~^https://~i'],
+            'smartlink_label' => 'nullable|string|max:60',
+        ], ['smartlink_url.regex' => 'Smartlink must be an https:// URL.']);
+        foreach (['popunder_code' => 'Popunder', 'socialbar_code' => 'Social Bar'] as $field => $label) {
+            if ($problems = AdSlot::adsterraScriptProblems($data[$field] ?? null)) {
+                return back()->withErrors([$field => $label.': '.implode(' ', $problems)])->withInput();
+            }
+        }
+        $label = trim((string) ($data['smartlink_label'] ?? '')) ?: 'Sponsored offer';
+        if (preg_match('/download|play|watch|click|continue|next|free|virus|update/i', $label)) {
+            return back()->withErrors(['smartlink_label' => 'Use a neutral label such as "Sponsored offer". Labels that look like Download / Play / Next buttons are deceptive.'])->withInput();
+        }
+        $pairs = [
+            'adsterra.popunder_enabled' => $request->boolean('popunder_enabled') && trim((string) ($data['popunder_code'] ?? '')) !== '',
+            'adsterra.popunder_code' => trim((string) ($data['popunder_code'] ?? '')),
+            'adsterra.socialbar_enabled' => $request->boolean('socialbar_enabled') && trim((string) ($data['socialbar_code'] ?? '')) !== '',
+            'adsterra.socialbar_code' => trim((string) ($data['socialbar_code'] ?? '')),
+            'adsterra.smartlink_enabled' => $request->boolean('smartlink_enabled') && trim((string) ($data['smartlink_url'] ?? '')) !== '',
+            'adsterra.smartlink_url' => trim((string) ($data['smartlink_url'] ?? '')),
+            'adsterra.smartlink_label' => $label,
+        ];
+        $before = [];
+        foreach ($pairs as $k => $v) {
+            $before[$k] = setting($k);
+        }
+        $this->settings->setMany($pairs, 'adsterra');
+        Cache::forget('site.nav');
+        $this->audit->log('adsense_changed', 'monetization', null, 'Adsterra Popunder / Social Bar / Smartlink updated', $before, $pairs);
+        $msg = 'Popunder, Social Bar and Smartlink saved.';
+        if (($pairs['adsterra.popunder_enabled'] || $pairs['adsterra.socialbar_enabled']) && setting_bool('adsense.enabled')) {
+            return back()->with('success', $msg)->with('warning', 'AdSense is enabled, so Popunder and Social Bar stay OFF on the site. They start automatically when AdSense is disabled.');
+        }
+        return back()->with('success', $msg);
+    }
+
     public function updateAdsterraSlot(Request $request, AdSlot $slot)
     {
         $data = $request->validate([
@@ -260,6 +300,7 @@ class MonetizationController extends Controller
             ['label' => 'Sitemap enabled and robots.txt served', 'ok' => setting_bool('seo.sitemap_enabled', true)],
             ['label' => 'No other ad network serving next to AdSense during review (Adsterra off or paused)', 'ok' => ! (setting_bool('adsense.enabled') && app(\App\Services\AdServing::class)->adsterraActive())],
             ['label' => 'Adsterra slots contain only Banner / Native codes (no Popunder, Social Bar, Smartlink)', 'ok' => $slots->every(fn ($s) => ! AdSlot::adsterraCodeProblems($s->adsterra_code) && ! AdSlot::adsterraCodeProblems($s->adsterra_code_mobile))],
+            ['label' => 'Adsterra Popunder and Social Bar are off (AdSense does not allow pop-unders)', 'ok' => ! (setting_bool('adsterra.enabled') && (setting_bool('adsterra.popunder_enabled') || setting_bool('adsterra.socialbar_enabled')))],
             ['label' => 'Sidebar ad disabled on mobile (readability)', 'ok' => ! ($slots->firstWhere('key', 'sidebar')?->mobile ?? false)],
         ];
         return view('admin.monetization.checklist', compact('checks'));

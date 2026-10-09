@@ -75,6 +75,13 @@ class SettingsService
             'adsterra.enabled' => '0',
             'adsterra.pause_when_adsense' => '1',
             'adsterra.require_consent' => '1',
+            'adsterra.popunder_enabled' => '0',
+            'adsterra.popunder_code' => '',
+            'adsterra.socialbar_enabled' => '0',
+            'adsterra.socialbar_code' => '',
+            'adsterra.smartlink_enabled' => '0',
+            'adsterra.smartlink_url' => '',
+            'adsterra.smartlink_label' => 'Sponsored offer',
             // Cookie consent
             'consent.enabled' => '1',
             'consent.mode' => 'auto',        // auto|always|never  (auto = required regions only)

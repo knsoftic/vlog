@@ -83,8 +83,11 @@ class AdSlot extends Model
     }
 
     /**
-     * Only Adsterra Banner ("atOptions" + invoke.js) and Native Banner (invoke.js + container div) codes pass.
-     * Popunder, Social Bar and Smartlink codes are rejected because AdSense forbids pop-unders on the site.
+     * Banner / Native Banner validation, based on the Adsterra ad key (not on a particular loader domain or
+     * file name, which Adsterra changes over time).
+     *  - Banner: an "atOptions = { 'key' : '…' }" block plus an external <script src>.
+     *  - Native: a <div id="container-KEY"> plus an external <script src>.
+     * Popunder / Social Bar (bare script) and Smartlink (link) belong in their own fields and are rejected here.
      */
     public static function adsterraCodeProblems(?string $code): array
     {
@@ -96,19 +99,42 @@ class AdSlot extends Model
         if (mb_strlen($code) > 5000) {
             $problems[] = 'Code is too long (max 5000 characters).';
         }
-        $hasInvoke = (bool) preg_match('~/invoke\.js~i', $code);
-        $isBanner = (bool) preg_match('/atOptions\s*=/', $code);
-        $isNative = (bool) preg_match('/id\s*=\s*["\']container-[A-Za-z0-9]+["\']/', $code);
-        if (! $hasInvoke || (! $isBanner && ! $isNative)) {
-            $problems[] = 'This is not an Adsterra Banner or Native Banner code. Banner codes contain "atOptions" and ".../invoke.js"; Native Banner codes contain ".../invoke.js" and a <div id="container-…">. Popunder, Social Bar and Smartlink codes are not allowed.';
+        $hasLoader = (bool) preg_match('~<script\b[^>]*\bsrc\s*=\s*["\']?(?:https?:)?//~i', $code);
+        $isBanner = (bool) preg_match('~atOptions\s*=\s*\{.*?["\']key["\']\s*:\s*["\'][A-Za-z0-9]{8,64}["\']~is', $code);
+        $isNative = (bool) preg_match('~id\s*=\s*["\']container-[A-Za-z0-9]{8,64}["\']~i', $code);
+        if (! $hasLoader || (! $isBanner && ! $isNative)) {
+            $problems[] = 'This is not an Adsterra Banner or Native Banner code. Banner codes have an "atOptions = { \'key\' : … }" block and a <script src>; Native Banner codes have a <script src> and a <div id="container-…">. Put Popunder, Social Bar and Smartlink in their own section below.';
         }
         if (preg_match('/window\.open|location\.(href|replace|assign)|\.click\(\)|onclick\s*=|setInterval|addEventListener\(\s*[\'"](click|mousedown|touchstart)/i', $code)) {
-            $problems[] = 'Code contains redirect, auto-click or popup logic, which is not allowed.';
+            $problems[] = 'Code contains redirect, auto-click or popup logic, which is not allowed in a banner slot.';
         }
-        if (preg_match('/<a\s[^>]*href=/i', $code) && ! $hasInvoke) {
-            $problems[] = 'Smartlink / direct links are not allowed as ad code.';
+        if (preg_match('/<a\s[^>]*href=/i', $code)) {
+            $problems[] = 'Links are not allowed in a banner slot. Use the Smartlink field for direct links.';
         }
         return $problems;
+    }
+
+    /**
+     * Popunder / Social Bar fields: only external <script src="…"></script> tags, nothing inline.
+     */
+    public static function adsterraScriptProblems(?string $code): array
+    {
+        $code = trim((string) $code);
+        if ($code === '') {
+            return [];
+        }
+        if (mb_strlen($code) > 2000) {
+            return ['Code is too long (max 2000 characters).'];
+        }
+        $scripts = '~<script\b[^>]*\bsrc\s*=\s*["\']?(?:https?:)?//[^"\'\s>]+["\']?[^>]*>\s*</script>~i';
+        if (! preg_match($scripts, $code)) {
+            return ['Paste the Adsterra code exactly as given: a <script src="//…"></script> tag.'];
+        }
+        $rest = trim(preg_replace(['~<!--.*?-->~s', $scripts], '', $code));
+        if ($rest !== '') {
+            return ['Only <script src="…"></script> tags are allowed here (no inline JavaScript or HTML).'];
+        }
+        return [];
     }
 
     /** Simple static policy checks for admin warnings. */

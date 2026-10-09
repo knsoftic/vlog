@@ -8,9 +8,10 @@ use App\Http\Middleware\TrackPageView;
  * Single place that decides which ad network may serve on the current request.
  *
  *  - AdSense: Settings → Monetization (publisher id + enabled).
- *  - Adsterra: Banner / Native Banner only. Popunder, Social Bar and Smartlink are never rendered,
- *    because Google does not allow AdSense on sites that contain or trigger pop-unders.
- *  - By default Adsterra pauses itself while AdSense is enabled, so the site stays clean for review.
+ *  - Adsterra Banner / Native: per ad slot. Pauses while AdSense is enabled (configurable).
+ *  - Adsterra Popunder / Social Bar: site-wide scripts. ALWAYS off while AdSense is enabled, because Google
+ *    does not allow AdSense on sites that contain or trigger pop-unders. Not overridable.
+ *  - Adsterra Smartlink: a clearly labelled "Sponsored" link, follows the banner rules.
  *  - Ads are never shown to logged-in admins (accidental self-clicks) or bots, when configured.
  *
  * Bound as a singleton so the per-request checks run once.
@@ -19,6 +20,18 @@ class AdServing
 {
     protected ?bool $viewerEligible = null;
     protected ?array $consent = null;
+    protected ?int $requestId = null;
+
+    /** Memoised values belong to one request only (tests and long-running workers reuse the container). */
+    protected function sync(): void
+    {
+        $id = spl_object_id(request());
+        if ($this->requestId !== $id) {
+            $this->requestId = $id;
+            $this->viewerEligible = null;
+            $this->consent = null;
+        }
+    }
 
     public function adsenseActive(): bool
     {
@@ -47,8 +60,47 @@ class AdServing
         return $this->adsenseActive() || ($this->adsterraActive() && $this->adsterraConsentOk());
     }
 
+    /** Popunder / Social Bar may load: Adsterra on, AdSense OFF (hard rule), consent given, real visitor. */
+    public function scriptFormatsAllowed(): bool
+    {
+        return setting_bool('adsterra.enabled')
+            && ! $this->adsenseActive()
+            && $this->adsterraConsentOk()
+            && $this->viewerEligible();
+    }
+
+    /** @return array<string,string> format key => code that should be printed before </body> */
+    public function scriptFormats(): array
+    {
+        if (! $this->scriptFormatsAllowed()) {
+            return [];
+        }
+        $out = [];
+        foreach (['socialbar', 'popunder'] as $f) {
+            $code = trim((string) setting("adsterra.{$f}_code"));
+            if (setting_bool("adsterra.{$f}_enabled") && $code !== '' && ! \App\Models\AdSlot::adsterraScriptProblems($code)) {
+                $out[$f] = $code;
+            }
+        }
+        return $out;
+    }
+
+    /** Smartlink to render as a labelled sponsored link, or null. */
+    public function smartlink(): ?array
+    {
+        $url = trim((string) setting('adsterra.smartlink_url'));
+        if (! setting_bool('adsterra.smartlink_enabled') || $url === '' || ! $this->adsterraActive() || ! $this->adsterraConsentOk() || ! $this->viewerEligible()) {
+            return null;
+        }
+        if (! preg_match('~^https://~i', $url) || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+        return ['url' => $url, 'label' => setting('adsterra.smartlink_label') ?: 'Sponsored offer'];
+    }
+
     public function viewerEligible(): bool
     {
+        $this->sync();
         if ($this->viewerEligible !== null) {
             return $this->viewerEligible;
         }
@@ -64,6 +116,7 @@ class AdServing
 
     public function consent(): array
     {
+        $this->sync();
         return $this->consent ??= app(TrackPageView::class)->consentState(request());
     }
 }

@@ -205,6 +205,12 @@
         @include('partials.consent')
     @endif
     @stack('scripts')
+    @unless($isPreview ?? false)
+        @foreach($adServing->scriptFormats() as $adFormat => $adCode)
+            {{-- Adsterra {{ $adFormat }} (Monetization → Adsterra Banners). Never loads while AdSense is enabled. --}}
+            {!! $adCode !!}
+        @endforeach
+    @endunless
     @if(!($isPreview ?? false) && trim((string) setting('code.body_end')) !== '')
         {{-- Custom body-end code (Settings → Custom Code) --}}
         {!! setting('code.body_end') !!}

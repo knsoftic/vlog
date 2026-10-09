@@ -146,6 +146,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('adsterra', [Admin\MonetizationController::class, 'adsterra'])->name('adsterra');
             Route::put('adsterra/settings', [Admin\MonetizationController::class, 'updateAdsterraSettings'])->name('adsterra.settings');
             Route::put('adsterra/slots/{slot}', [Admin\MonetizationController::class, 'updateAdsterraSlot'])->name('adsterra.slot');
+            Route::put('adsterra/formats', [Admin\MonetizationController::class, 'updateAdsterraFormats'])->name('adsterra.formats');
         });
 
         // ---- Pages & appearance ----
@@ -204,4 +205,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
     });
 });
+
 

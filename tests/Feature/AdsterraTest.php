@@ -133,12 +133,9 @@ HTML;
         $this->withHeaders(['User-Agent' => self::DESKTOP_UA])->get('/')->assertOk()->assertSee('data-ad-provider="adsterra"', false);
     }
 
-    public function test_not_served_to_admins_bots_or_without_consent_in_consent_regions(): void
+    public function test_not_served_to_bots_or_without_consent_in_consent_regions(): void
     {
         $this->enableHeaderBanner();
-        $this->actingAs($this->admin)->withHeaders(['User-Agent' => self::DESKTOP_UA])->get('/')->assertOk()->assertDontSee('data-ad-provider="adsterra"', false);
-        auth()->logout();
-
         $this->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'])->get('/')->assertDontSee('data-ad-provider="adsterra"', false);
 
         $this->settings(['consent.mode' => 'auto']);
@@ -147,6 +144,56 @@ HTML;
         // ...after accepting advertising cookies
         $this->withUnencryptedCookie('vh_consent', 'v1.111')->withHeaders(['User-Agent' => self::DESKTOP_UA, 'CF-IPCountry' => 'DE'])->get('/')
             ->assertOk()->assertSee('data-ad-provider="adsterra"', false);
+        // US visitor needs no consent banner choice
+        $this->withHeaders(['User-Agent' => self::DESKTOP_UA, 'CF-IPCountry' => 'US'])->get('/')->assertOk()->assertSee('data-ad-provider="adsterra"', false);
+    }
+
+    public function test_not_served_to_logged_in_admins(): void
+    {
+        $this->enableHeaderBanner();
+        $this->actingAs($this->admin)->withHeaders(['User-Agent' => self::DESKTOP_UA])->get('/')->assertOk()->assertDontSee('data-ad-provider="adsterra"', false);
+    }
+
+    public function test_current_adsterra_banner_code_format_is_accepted(): void
+    {
+        // Format shown in the Adsterra dashboard (no type attribute, loader domain varies)
+        $code = "<script>\n  atOptions = {\n    'key' : '2852cab3b908a6f021af6b858d65619c',\n    'format' : 'iframe',\n    'height' : 60,\n    'width' : 468,\n    'params' : {}\n  };\n</script>\n<script src=\"https://pl28123456.effectivegatecpm.com/2852cab3b908a6f021af6b858d65619c/invoke.js\"></script>";
+        $this->assertSame([], AdSlot::adsterraCodeProblems($code));
+        $slot = AdSlot::where('key', 'in_article')->firstOrFail();
+        $this->actingAs($this->admin)->put("/admin/monetization/adsterra/slots/{$slot->id}", ['adsterra_enabled' => 1, 'adsterra_code' => $code])->assertSessionHasNoErrors();
+        $this->assertSame([468, 60], $slot->fresh()->adsterraSize($slot->fresh()->adsterra_code));
+    }
+
+    public function test_popunder_and_social_bar_load_only_while_adsense_is_off(): void
+    {
+        $social = "<script src='//pl28123456.effectivegatecpm.com/aa/bb/cc/aabbccsocial.js'></script>";
+        $this->actingAs($this->admin)->put('/admin/monetization/adsterra/formats', ['popunder_enabled' => 1, 'popunder_code' => self::POPUNDER, 'socialbar_enabled' => 1, 'socialbar_code' => $social])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($this->admin)->put('/admin/monetization/adsterra/formats', ['popunder_enabled' => 1, 'popunder_code' => '<script>window.open("https://x.test")</script>'])
+            ->assertSessionHasErrors('popunder_code');
+        auth()->logout();
+        $this->settings(['adsterra.enabled' => true, 'adsense.enabled' => false, 'consent.mode' => 'never']);
+
+        $this->withHeaders(['User-Agent' => self::DESKTOP_UA])->get('/')->assertOk()
+            ->assertSee('0123456789abcdef.js', false)->assertSee('aabbccsocial.js', false);
+
+        $this->settings(['adsense.enabled' => true, 'adsense.client_id' => 'pub-1234567890123456', 'adsterra.pause_when_adsense' => false]);
+        $this->withHeaders(['User-Agent' => self::DESKTOP_UA])->get('/')->assertOk()
+            ->assertDontSee('0123456789abcdef.js', false)->assertDontSee('aabbccsocial.js', false);
+    }
+
+    public function test_smartlink_is_a_labelled_sponsored_link_and_deceptive_labels_are_rejected(): void
+    {
+        $this->actingAs($this->admin)->put('/admin/monetization/adsterra/formats', ['smartlink_enabled' => 1, 'smartlink_url' => 'https://www.example-offers.test/abc?key=123', 'smartlink_label' => 'Download now'])
+            ->assertSessionHasErrors('smartlink_label');
+        $this->actingAs($this->admin)->put('/admin/monetization/adsterra/formats', ['smartlink_enabled' => 1, 'smartlink_url' => 'https://www.example-offers.test/abc?key=123', 'smartlink_label' => 'Sponsored offer'])
+            ->assertSessionHasNoErrors();
+        auth()->logout();
+        $this->settings(['adsterra.enabled' => true, 'adsense.enabled' => false, 'consent.mode' => 'never']);
+
+        $post = Post::published()->vlogs()->first();
+        $this->withHeaders(['User-Agent' => self::DESKTOP_UA])->get($post->url)->assertOk()
+            ->assertSee('href="https://www.example-offers.test/abc?key=123"', false)->assertSee('rel="sponsored nofollow noopener"', false);
     }
 
     public function test_master_switch_off_serves_nothing(): void
